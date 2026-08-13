@@ -5,14 +5,24 @@ class EdgeProjected
   PVector worldA;
   PVector worldB;
   int ownerOccluderIndex;
+  // -1 for a normal box edge (single owner). Set to a second occluder index for a seam
+  // edge shared by two intersecting boxes (see xLib_BoxIntersection) - such an edge sits
+  // exactly on both boxes' surfaces, so both must get the lenient self-occlusion check.
+  int ownerOccluderIndexB;
 
   EdgeProjected(ProjectedPoint a, ProjectedPoint b, PVector worldA, PVector worldB, int ownerOccluderIndex)
+  {
+    this(a, b, worldA, worldB, ownerOccluderIndex, -1);
+  }
+
+  EdgeProjected(ProjectedPoint a, ProjectedPoint b, PVector worldA, PVector worldB, int ownerOccluderIndex, int ownerOccluderIndexB)
   {
     this.a = a;
     this.b = b;
     this.worldA = worldA;
     this.worldB = worldB;
     this.ownerOccluderIndex = ownerOccluderIndex;
+    this.ownerOccluderIndexB = ownerOccluderIndexB;
   }
 }
 

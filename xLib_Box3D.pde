@@ -15,6 +15,18 @@ class Box3D extends Mesh
     { 0, 4 }, { 1, 5 }, { 2, 6 }, { 3, 7 }
   };
 
+  // The 6 faces as planar quads (c0,c1,c2,c3 in order, with c1-c0 and c3-c0 forming a
+  // perpendicular in-plane basis) - used by xLib_BoxIntersection to find seam edges
+  // where two boxes' surfaces cross.
+  final int[][] FACE_IDX = {
+    { 0, 1, 2, 3 }, // -Y (bottom)
+    { 4, 5, 6, 7 }, // +Y (top)
+    { 0, 1, 5, 4 }, // -Z
+    { 3, 2, 6, 7 }, // +Z
+    { 0, 4, 7, 3 }, // -X
+    { 1, 2, 6, 5 }  // +X
+  };
+
   float center_x;
   float center_y;
   float center_z;

@@ -176,6 +176,45 @@ class BVH3D
     return false;
   }
 
+  // Collects the indices of every leaf object whose AABB overlaps the given query AABB
+  // (broad-phase for e.g. finding candidate box-box intersection pairs). Includes the
+  // query's own object if its bounds are passed in - callers dedupe/self-filter as needed.
+  void queryOverlaps(float qMinX, float qMinY, float qMinZ, float qMaxX, float qMaxY, float qMaxZ, ArrayList<Integer> outIndices)
+  {
+    if (rootIndex < 0)
+      return;
+
+    int sp = 0;
+    traversalStack[sp++] = rootIndex;
+
+    while (sp > 0)
+    {
+      int nodeIndex = traversalStack[--sp];
+      BVH3DNode node = nodes.get(nodeIndex);
+
+      if (!aabbOverlap(node.minX, node.minY, node.minZ, node.maxX, node.maxY, node.maxZ, qMinX, qMinY, qMinZ, qMaxX, qMaxY, qMaxZ))
+        continue;
+
+      if (node.isLeaf())
+      {
+        for (int i = node.start; i < node.start + node.count; i++)
+          outIndices.add(objectIndices[i]);
+      }
+      else if (sp < MAX_STACK - 2)
+      {
+        traversalStack[sp++] = node.left;
+        traversalStack[sp++] = node.right;
+      }
+    }
+  }
+
+  boolean aabbOverlap(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ, float bMinX, float bMinY, float bMinZ, float bMaxX, float bMaxY, float bMaxZ)
+  {
+    return aMinX <= bMaxX && aMaxX >= bMinX
+        && aMinY <= bMaxY && aMaxY >= bMinY
+        && aMinZ <= bMaxZ && aMaxZ >= bMinZ;
+  }
+
   boolean rayIntersectsAABB(PVector origin, PVector dir, float minX, float minY, float minZ, float maxX, float maxY, float maxZ, float tMin, float tMax)
   {
     float t0 = tMin;

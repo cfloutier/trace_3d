@@ -18,10 +18,19 @@ class LineBuilder implements BVH3DRayTest
   BVH3D bvh = new BVH3D();
   float orthoRayTMax = 1000;
 
+  // World-space seam edges between overlapping boxes (see xLib_BoxIntersection) - purely
+  // geometric, so cached and only recomputed alongside occluders (indexedMeshListVersion),
+  // then reprojected into `edges` every rebuild like any other edge.
+  ArrayList<SeamWorldEdge> seamEdges = new ArrayList<SeamWorldEdge>();
+  ArrayList<Integer> overlapScratch = new ArrayList<Integer>();
+  boolean seamEdgesBuiltForCurrentOccluders = false;
+
   // Scratch state for the current testObject() call, set just before each bvh.anyHit()
-  // so the ray-test callback can tell "the edge's own box" from "any other occluder"
-  // without allocating a closure per sample (see isSampleVisible/testObject).
-  int currentOwnerIndex = -1;
+  // so the ray-test callback can tell "the edge's own box (or boxes, for a seam edge)"
+  // from "any other occluder" without allocating a closure per sample
+  // (see isSampleVisible/testObject). currentOwnerIndexB is -1 for normal box edges.
+  int currentOwnerIndexA = -1;
+  int currentOwnerIndexB = -1;
   float currentOwnerEps = 0.001;
   float[] scratchT = new float[2];
 
@@ -116,6 +125,7 @@ class LineBuilder implements BVH3DRayTest
             indexedMeshListVersion = meshListVersion;
 
           prepareEmit(rebuildingOccluders);
+          projectSeamEdges();
           stage = STAGE_EMIT;
           finalGroup.clear();
           edgeIndex = 0;
@@ -166,7 +176,12 @@ class LineBuilder implements BVH3DRayTest
     }
 
     if (!rebuildBVH)
+    {
+      // Occluders (and the BVH built from them) are unchanged - still valid to query,
+      // so a plain enable-toggle can still (re)build seam edges without a full rebuild.
+      updateSeamEdgesIfNeeded();
       return;
+    }
 
     float[] minXs = new float[n];
     float[] minYs = new float[n];
@@ -205,6 +220,67 @@ class LineBuilder implements BVH3DRayTest
     else
     {
       orthoRayTMax = 1000;
+    }
+
+    // Occluders just changed - any previously cached seam edges are stale.
+    seamEdgesBuiltForCurrentOccluders = false;
+    updateSeamEdgesIfNeeded();
+  }
+
+  // (Re)builds seamEdges only when actually needed: skipped entirely while disabled,
+  // and only recomputed once per occluder set (tracked by seamEdgesBuiltForCurrentOccluders)
+  // even if called again on a camera-only rebuild or a repeated enable toggle.
+  void updateSeamEdgesIfNeeded()
+  {
+    if (!data.occlusion.seam_edges_enabled)
+    {
+      seamEdges.clear();
+      seamEdgesBuiltForCurrentOccluders = false;
+      return;
+    }
+
+    if (seamEdgesBuiltForCurrentOccluders)
+      return;
+
+    seamEdges.clear();
+    buildSeamEdges();
+    seamEdgesBuiltForCurrentOccluders = true;
+  }
+
+  // Finds overlapping box pairs via the BVH broad-phase (each pair visited once, j > i)
+  // and computes their surface-seam segments. World-space and camera-independent, so
+  // only needs to run when occluders themselves are rebuilt.
+  void buildSeamEdges()
+  {
+    int n = occluders.size();
+
+    for (int i = 0; i < n; i++)
+    {
+      OccluderBox occI = occluders.get(i);
+      overlapScratch.clear();
+      bvh.queryOverlaps(occI.minX, occI.minY, occI.minZ, occI.maxX, occI.maxY, occI.maxZ, overlapScratch);
+
+      for (int k = 0; k < overlapScratch.size(); k++)
+      {
+        int j = overlapScratch.get(k);
+        if (j <= i)
+          continue;
+
+        appendBoxSeamEdges(occI.box, i, occluders.get(j).box, j, seamEdges);
+      }
+    }
+  }
+
+  // Projects the cached world-space seam edges for the current camera frame - cheap,
+  // so (unlike buildSeamEdges) this runs on every rebuild, same as regular mesh edges.
+  void projectSeamEdges()
+  {
+    for (int i = 0; i < seamEdges.size(); i++)
+    {
+      SeamWorldEdge s = seamEdges.get(i);
+      ProjectedPoint pa = data.camera.projectPointWithDepth(s.worldA, frame);
+      ProjectedPoint pb = data.camera.projectPointWithDepth(s.worldB, frame);
+      edges.add(new EdgeProjected(pa, pb, s.worldA, s.worldB, s.ownerA, s.ownerB));
     }
   }
 
@@ -300,7 +376,7 @@ class LineBuilder implements BVH3DRayTest
       return false;
 
     PVector worldPoint = data.camera.unprojectPoint(sx, sy, z, frame);
-    return isSampleVisible(worldPoint, e.ownerOccluderIndex);
+    return isSampleVisible(worldPoint, e.ownerOccluderIndex, e.ownerOccluderIndexB);
   }
 
   boolean isOutsideClipDomain(float sx, float sy)
@@ -347,21 +423,31 @@ class LineBuilder implements BVH3DRayTest
   }
 
   // Casts a line-of-sight ray from worldPoint toward the camera and tests it against the
-  // BVH of occluder boxes. The ray origin is biased outward (away from the owning box's
-  // center) by that box's epsilon to damp exact-surface numerical noise; testObject()
-  // then applies a stricter threshold specifically when the candidate IS the owning box
-  // (self-occlusion), and accepts any other box's hit as occlusion.
-  boolean isSampleVisible(PVector worldPoint, int ownerIndex)
+  // BVH of occluder boxes. The ray origin is biased outward by an owner-relative epsilon
+  // to damp exact-surface numerical noise; testObject() then applies a lenient
+  // chord-length threshold specifically when the candidate is an owning box (self-
+  // occlusion), and treats any other box's hit as unconditional occlusion. A seam edge
+  // (ownerIndexB >= 0) sits on both owners' surfaces at once, so both get the lenient
+  // treatment and the bias direction is the combined "away from both centers" direction.
+  boolean isSampleVisible(PVector worldPoint, int ownerIndexA, int ownerIndexB)
   {
-    OccluderBox ownerOcc = occluders.get(ownerIndex);
+    OccluderBox ownerOccA = occluders.get(ownerIndexA);
 
-    PVector outwardDir = PVector.sub(worldPoint, ownerOcc.worldCenter);
+    PVector outwardDir = PVector.sub(worldPoint, ownerOccA.worldCenter);
+    float eps = ownerOccA.epsilon;
+
+    if (ownerIndexB >= 0)
+    {
+      OccluderBox ownerOccB = occluders.get(ownerIndexB);
+      outwardDir.add(PVector.sub(worldPoint, ownerOccB.worldCenter));
+      eps = max(eps, ownerOccB.epsilon);
+    }
+
     if (outwardDir.magSq() < 1e-12)
       outwardDir.set(0, 1, 0);
     else
       outwardDir.normalize();
 
-    float eps = ownerOcc.epsilon;
     PVector biasedOrigin = PVector.add(worldPoint, PVector.mult(outwardDir, eps));
 
     PVector dir;
@@ -381,7 +467,8 @@ class LineBuilder implements BVH3DRayTest
       tMax = orthoRayTMax;
     }
 
-    currentOwnerIndex = ownerIndex;
+    currentOwnerIndexA = ownerIndexA;
+    currentOwnerIndexB = ownerIndexB;
     currentOwnerEps = eps;
 
     boolean occluded = bvh.anyHit(biasedOrigin, dir, QUERY_T_MIN, tMax, this);
@@ -397,9 +484,9 @@ class LineBuilder implements BVH3DRayTest
     if (!occ.box.intersectRaySlab(origin, dir, tMin, tMax, scratchT))
       return false;
 
-    if (objectIndex == currentOwnerIndex)
+    if (objectIndex == currentOwnerIndexA || objectIndex == currentOwnerIndexB)
     {
-      // The ray always starts essentially ON the owning box's own surface, so tEntry is
+      // The ray always starts essentially ON an owning box's own surface, so tEntry is
       // near-zero whether this is a genuine self-occlusion (ray travels deep through the
       // box before exiting) or just a grazing touch at a silhouette edge (near-zero chord).
       // The chord length (tExit - tEntry) is what actually distinguishes the two cases.

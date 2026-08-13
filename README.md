@@ -66,11 +66,25 @@ Parametres:
 - min_visible_segment_px: seuil anti-segments parasites.
 - bisection_iterations: nombre d iterations de bissection pour affiner un point de coupure de visibilite.
 - self_occlusion_eps_scale: facteur (x diagonale de la boite) de l epsilon anti auto-occlusion.
+- seam_edges_enabled: ajoute les aretes de "couture" aux zones d intersection entre boites (off par defaut, voir plus bas).
 
 Notes:
 - En perspective, la profondeur des aretes est echantillonnee en interpolation 1/z (plus stable sur longues lignes), puis deprojetee en 3D pour le lancer de rayon.
 - Avec clipping actif, les echantillons hors du rectangle de clipping sont traites comme non visibles.
 - Les occludeurs sont des Box3D (potentiellement tournees, OBB) - le test rayon-boite est exact (methode des slabs en repere local), pas une approximation.
+
+### Aretes de couture (intersections entre boites)
+
+Quand Occlusion.seam_edges_enabled est actif, pour chaque paire de boites qui se
+recouvrent (reperees via BVH3D.queryOverlaps, broad-phase AABB), xLib_BoxIntersection
+calcule les segments ou une face de l une croise une face de l autre (intersection de
+plans + double decoupage rectangulaire) et les ajoute comme aretes supplementaires. Une
+arete de couture appartient visuellement aux deux boites a la fois (EdgeProjected porte
+un second index de proprietaire optionnel), donc les deux beneficient du seuil tolerant
+d auto-occlusion. Le calcul est purement geometrique (independant de la camera) et n est
+donc refait que lorsque la geometrie des boites change, jamais au simple drag camera -
+mais reste potentiellement couteux sur des scenes avec beaucoup de recouvrements, d ou
+l option desactivee par defaut.
 
 ## Export SVG
 
@@ -96,7 +110,8 @@ Fichiers principaux:
 - DataOcclusion.pde: parametres HLR + UI Occlusion.
 - xLib_Mesh.pde: abstraction Mesh + primitives projetees (EdgeProjected, OccluderBox).
 - xLib_Box3D.pde: decomposition d une box en aretes, intersection rayon-boite (OBB, slab method).
-- xLib_BVH3D.pde: BVH generique (broad-phase spatial) pour les requetes rayon "any-hit".
+- xLib_BVH3D.pde: BVH generique (broad-phase spatial) pour les requetes rayon "any-hit" et de recouvrement AABB.
+- xLib_BoxIntersection.pde: calcul des aretes de couture entre boites qui se recouvrent.
 - xLib_Camera3D.pde / xLib_CameraData.pde: projection camera + UI + deprojection ecran->monde.
 
 Objets de travail:
@@ -128,4 +143,8 @@ Le projet embarque des fichiers xLib_*.pde copies localement. Les evolutions glo
 
 ## TODO
 
-- Gerer correctement les intersections entre boxes en ajoutant des edges supplementaires pour decouper les lignes aux zones d intersection.
+- Aretes de couture (voir Occlusion > seam_edges_enabled): quelques traits de quelques
+  pixels de long disparaissent parfois (filtrage min_visible_segment_px ou aliasing
+  d echantillonnage sur un run tres court) - juge negligeable pour l instant.
+- Hachures (shading) selon l orientation par rapport a la lumiere, attachees au mesh
+  comme les aretes de couture (a venir).

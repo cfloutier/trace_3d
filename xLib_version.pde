@@ -1,12 +1,24 @@
 String get_xlib_version()
 {
-  return "3.7.0";
+  return "3.8.0";
 }
 
 
 /*
 
  # CHANGELOG
+
+ ## [3.8.0] - 2026-08-13
+ - xLib_BVH3D: ajout de queryOverlaps() — requête de recouvrement AABB (broad-phase), en plus du any-hit rayon existant
+ - xLib_Box3D: ajout de FACE_IDX (les 6 faces en quads) pour la détection d'intersections
+ - xLib_BoxIntersection: nouveau fichier — calcule les segments de "couture" où deux Box3D se croisent
+   (intersection de plans face/face + double découpage rectangulaire), sans CSG solide ni face capping
+ - xLib_Mesh: EdgeProjected porte désormais un second index de propriétaire optionnel (ownerOccluderIndexB,
+   -1 par défaut) — une arête de couture appartient à deux boîtes à la fois, les deux profitent du seuil
+   tolérant d'auto-occlusion
+ - trace_3d: LineBuilder construit et met en cache les seam edges (recalculées seulement quand les occludeurs
+   changent, jamais au simple drag caméra) ; nouveau toggle Occlusion.seam_edges_enabled (off par défaut, coût
+   O(paires qui se recouvrent x 36 tests de faces))
 
  ## [3.7.0] - 2026-08-13
  - xLib_BVH3D: nouveau fichier — BVH générique (broad-phase spatial), traversée "any-hit" itérative sans allocation

@@ -14,6 +14,11 @@ class DataOcclusion extends GenericData
   int bisection_iterations = 10;
   float self_occlusion_eps_scale = 0.0001;
 
+  // Off by default: pairwise box-box seam detection is O(overlapping pairs x 36 face
+  // tests) - cheap for a few overlaps, potentially costly for large, densely-overlapping
+  // scenes, so it's opt-in rather than always-on.
+  boolean seam_edges_enabled = false;
+
   void LoadJson(JSONObject src)
   {
     if (src == null) return;
@@ -22,6 +27,7 @@ class DataOcclusion extends GenericData
     min_visible_segment_px = src.getFloat("min_visible_segment_px", min_visible_segment_px);
     bisection_iterations = src.getInt("bisection_iterations", bisection_iterations);
     self_occlusion_eps_scale = src.getFloat("self_occlusion_eps_scale", self_occlusion_eps_scale);
+    seam_edges_enabled = src.getBoolean("seam_edges_enabled", seam_edges_enabled);
   }
 
   JSONObject SaveJson()
@@ -32,6 +38,7 @@ class DataOcclusion extends GenericData
     dest.setFloat("min_visible_segment_px", min_visible_segment_px);
     dest.setInt("bisection_iterations", bisection_iterations);
     dest.setFloat("self_occlusion_eps_scale", self_occlusion_eps_scale);
+    dest.setBoolean("seam_edges_enabled", seam_edges_enabled);
     return dest;
   }
 }
@@ -46,6 +53,7 @@ class OcclusionGUI extends GUIPanel
   Slider min_visible_segment_px;
   Slider bisection_iterations;
   Slider self_occlusion_eps_scale;
+  Toggle seam_edges_enabled;
 
   OcclusionGUI(DataOcclusion occlusion)
   {
@@ -58,6 +66,7 @@ class OcclusionGUI extends GUIPanel
     super.Init();
 
     enabled = addToggle("enabled", "Enable HLR", occlusion);
+    seam_edges_enabled = addToggle("seam_edges_enabled", "Box Seam Edges", occlusion);
     nextLine();
 
     sample_step_px = addSlider("sample_step_px", "Sample Step px", 0.5, 8.0);
@@ -74,6 +83,7 @@ class OcclusionGUI extends GUIPanel
     min_visible_segment_px.setValue(occlusion.min_visible_segment_px);
     bisection_iterations.setValue(occlusion.bisection_iterations);
     self_occlusion_eps_scale.setValue(occlusion.self_occlusion_eps_scale);
+    seam_edges_enabled.setValue(occlusion.seam_edges_enabled);
   }
 
   void update_ui()
