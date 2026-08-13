@@ -73,6 +73,30 @@ class CameraData extends GenericData implements CameraProjector3D
     return new PVector(p.x, p.y);
   }
 
+  // Exact inverse of projectPointWithDepth: reconstructs the world-space point from a
+  // screen-space projected (x,y) and its camera-space depth z, using the same frame.
+  PVector unprojectPoint(float screenX, float screenY, float depthZ, CameraFrame frame)
+  {
+    float camX, camY;
+    if (projection_mode == PROJECTION_ORTHO)
+    {
+      float safeZoom = max(1e-6, ortho_zoom);
+      camX = screenX / safeZoom;
+      camY = screenY / safeZoom;
+    }
+    else
+    {
+      camX = screenX * depthZ / frame.focal;
+      camY = screenY * depthZ / frame.focal;
+    }
+
+    PVector world = frame.camera_pos.copy();
+    world.add(PVector.mult(frame.right, camX));
+    world.add(PVector.mult(frame.up, camY));
+    world.add(PVector.mult(frame.forward, depthZ));
+    return world;
+  }
+
   PVector getTarget()
   {
     return new PVector(target_x, target_y, target_z);

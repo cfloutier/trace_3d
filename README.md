@@ -1,6 +1,6 @@
 # trace_3d
 
-Sketch Processing pour generer un champ de Box3D projete en 2D (wireframe), avec camera orbitale, projection Ortho/Perspective, HLR logiciel (z-buffer), et export SVG direct.
+Sketch Processing pour generer un champ de Box3D projete en 2D (wireframe), avec camera orbitale, projection Ortho/Perspective, HLR analytique (ray-casting + BVH), et export SVG direct.
 
 ## Objectif
 
@@ -55,20 +55,22 @@ La geometrie 3D est mise en cache dans meshList et n est reconstruite que si Mes
 
 ## Occlusion (HLR)
 
-Quand Occlusion.enabled est actif, le rendu passe par:
-1. Projection des sommets 3D.
-2. Rasterization des faces dans un depth buffer.
-3. Echantillonnage des aretes pour ne garder que les segments visibles.
+Quand Occlusion.enabled est actif, le rendu passe par un HLR analytique (ray-casting objet-space, pas de rasterization):
+1. Collecte: pour chaque Box3D, un occludeur (bbox monde + centre + diagonale) et ses 12 aretes projetees (coordonnees ecran + coordonnees monde).
+2. Un BVH (xLib_BVH3D) est construit sur les occludeurs; il n est reconstruit que si la liste de boites change (pas au simple drag camera).
+3. Emission: chaque arete est echantillonnee en espace ecran (meme parametrisation qu avant, correcte en perspective via 1/z). A chaque echantillon, le point est deprojete en 3D et un rayon est lance vers la camera contre le BVH pour tester la visibilite exacte (intersection rayon-boite fermee, gere la rotation). Sur un changement de visibilite entre deux echantillons, une bissection affine le point de coupure exact (au lieu de le caler sur la grille d echantillonnage).
+4. Auto-occlusion: l origine du rayon est biaisee vers l exterieur de la boite proprietaire de l arete, avec un epsilon proportionnel a la diagonale de cette boite; un seuil specifique evite qu une arete de silhouette s auto-occulte par erreur, tout en laissant une vraie auto-occlusion (face arriere) fonctionner normalement.
 
 Parametres:
-- zbuffer_scale: resolution relative du z-buffer.
-- sample_step_px: pas d echantillonnage des aretes.
-- depth_bias: tolerance de comparaison profondeur.
+- sample_step_px: pas d echantillonnage des aretes en espace ecran.
 - min_visible_segment_px: seuil anti-segments parasites.
+- bisection_iterations: nombre d iterations de bissection pour affiner un point de coupure de visibilite.
+- self_occlusion_eps_scale: facteur (x diagonale de la boite) de l epsilon anti auto-occlusion.
 
 Notes:
-- En perspective, la profondeur des aretes est echantillonnee en interpolation 1/z (plus stable sur longues lignes).
-- Avec clipping actif, les echantillons hors domaine de clipping sont traites comme non visibles.
+- En perspective, la profondeur des aretes est echantillonnee en interpolation 1/z (plus stable sur longues lignes), puis deprojetee en 3D pour le lancer de rayon.
+- Avec clipping actif, les echantillons hors du rectangle de clipping sont traites comme non visibles.
+- Les occludeurs sont des Box3D (potentiellement tournees, OBB) - le test rayon-boite est exact (methode des slabs en repere local), pas une approximation.
 
 ## Export SVG
 
@@ -92,9 +94,10 @@ Fichiers principaux:
 - DataGlobal.pde: aggregation des chapitres de donnees.
 - DataGUI.pde: tabs GUI + interactions souris.
 - DataOcclusion.pde: parametres HLR + UI Occlusion.
-- xLib_Mesh.pde: abstraction Mesh + primitives projetees.
-- xLib_Box3D.pde: decomposition d une box en aretes/faces.
-- xLib_Camera3D.pde / xLib_CameraData.pde: projection camera + UI.
+- xLib_Mesh.pde: abstraction Mesh + primitives projetees (EdgeProjected, OccluderBox).
+- xLib_Box3D.pde: decomposition d une box en aretes, intersection rayon-boite (OBB, slab method).
+- xLib_BVH3D.pde: BVH generique (broad-phase spatial) pour les requetes rayon "any-hit".
+- xLib_Camera3D.pde / xLib_CameraData.pde: projection camera + UI + deprojection ecran->monde.
 
 Objets de travail:
 - meshList: cache des Mesh.

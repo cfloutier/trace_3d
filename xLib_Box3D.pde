@@ -15,15 +15,6 @@ class Box3D extends Mesh
     { 0, 4 }, { 1, 5 }, { 2, 6 }, { 3, 7 }
   };
 
-  final int[][] TRI_IDX = {
-    { 0, 1, 2 }, { 0, 2, 3 },
-    { 4, 6, 5 }, { 4, 7, 6 },
-    { 0, 5, 1 }, { 0, 4, 5 },
-    { 3, 2, 6 }, { 3, 6, 7 },
-    { 0, 3, 7 }, { 0, 7, 4 },
-    { 1, 5, 6 }, { 1, 6, 2 }
-  };
-
   float center_x;
   float center_y;
   float center_z;
@@ -118,17 +109,6 @@ class Box3D extends Mesh
     return new PVector(point.x * c - point.y * s, point.x * s + point.y * c, point.z);
   }
 
-  ProjectedPoint[] getProjectedVertices(CameraProjector3D camera, CameraFrame frame)
-  {
-    PVector[] vertices = getVertices();
-    ProjectedPoint[] projected = new ProjectedPoint[vertices.length];
-
-    for (int i = 0; i < vertices.length; i++)
-      projected[i] = camera.projectPointWithDepth(vertices[i], frame);
-
-    return projected;
-  }
-
   @Override
   void addWireframe(PolylineGroup group, CameraProjector3D camera)
   {
@@ -141,19 +121,135 @@ class Box3D extends Mesh
   }
 
   @Override
-  void appendProjectedOcclusionGeometry(
-    ArrayList<EdgeProjected> edges,
-    ArrayList<TriangleProjected> triangles,
-    CameraProjector3D camera,
-    CameraFrame frame)
+  OccluderBox buildOccluder()
   {
-    ProjectedPoint[] p = getProjectedVertices(camera, frame);
+    return new OccluderBox(this);
+  }
+
+  @Override
+  void appendProjectedEdges(
+    ArrayList<EdgeProjected> edges,
+    CameraProjector3D camera,
+    CameraFrame frame,
+    int ownerOccluderIndex)
+  {
+    PVector[] worldVertices = getVertices();
+    ProjectedPoint[] p = new ProjectedPoint[worldVertices.length];
+    for (int i = 0; i < worldVertices.length; i++)
+      p[i] = camera.projectPointWithDepth(worldVertices[i], frame);
 
     for (int i = 0; i < EDGE_IDX.length; i++)
-      edges.add(new EdgeProjected(p[EDGE_IDX[i][0]], p[EDGE_IDX[i][1]]));
+    {
+      edges.add(new EdgeProjected(
+        p[EDGE_IDX[i][0]], p[EDGE_IDX[i][1]],
+        worldVertices[EDGE_IDX[i][0]], worldVertices[EDGE_IDX[i][1]],
+        ownerOccluderIndex));
+    }
+  }
 
-    for (int i = 0; i < TRI_IDX.length; i++)
-      triangles.add(new TriangleProjected(p[TRI_IDX[i][0]], p[TRI_IDX[i][1]], p[TRI_IDX[i][2]]));
+  // World-space geometric center of the box volume (base pivot + half-height on Y, rotated).
+  // Note: center_x/y/z is a BASE pivot (Y in [0, size_y]), not the volume's geometric center.
+  PVector getWorldGeometricCenter()
+  {
+    PVector offset = new PVector(0, size_y * 0.5, 0);
+    if (rotation.x != 0) offset = rotateXPoint(offset, rotation.x);
+    if (rotation.y != 0) offset = rotateYPoint(offset, rotation.y);
+    if (rotation.z != 0) offset = rotateZPoint(offset, rotation.z);
+    return new PVector(center_x + offset.x, center_y + offset.y, center_z + offset.z);
+  }
+
+  // Axis-aligned world-space bounding box of the (possibly rotated) box, from its 8 vertices.
+  void computeWorldAABB(float[] outMin, float[] outMax)
+  {
+    PVector[] vertices = getVertices();
+
+    float minX = Float.MAX_VALUE, minY = Float.MAX_VALUE, minZ = Float.MAX_VALUE;
+    float maxX = -Float.MAX_VALUE, maxY = -Float.MAX_VALUE, maxZ = -Float.MAX_VALUE;
+
+    for (int i = 0; i < vertices.length; i++)
+    {
+      PVector v = vertices[i];
+      if (v.x < minX) minX = v.x;
+      if (v.x > maxX) maxX = v.x;
+      if (v.y < minY) minY = v.y;
+      if (v.y > maxY) maxY = v.y;
+      if (v.z < minZ) minZ = v.z;
+      if (v.z > maxZ) maxZ = v.z;
+    }
+
+    outMin[0] = minX; outMin[1] = minY; outMin[2] = minZ;
+    outMax[0] = maxX; outMax[1] = maxY; outMax[2] = maxZ;
+  }
+
+  // Transforms a world-space point (isDirection=false) or vector (isDirection=true, no translation)
+  // into the box's unrotated local frame, where the box occupies x in [-size_x,size_x],
+  // y in [0,size_y], z in [-size_z,size_z]. This is the exact inverse of rotateAroundBaseCenter,
+  // which applies Rx then Ry then Rz: the inverse applies Rz(-z) then Ry(-y) then Rx(-x).
+  PVector worldToLocal(PVector world, boolean isDirection)
+  {
+    PVector p = world.copy();
+    if (!isDirection)
+      p.sub(center_x, center_y, center_z);
+
+    if (rotation.z != 0) p = rotateZPoint(p, -rotation.z);
+    if (rotation.y != 0) p = rotateYPoint(p, -rotation.y);
+    if (rotation.x != 0) p = rotateXPoint(p, -rotation.x);
+
+    return p;
+  }
+
+  // Closed-form ray/box (OBB) intersection via the slab method, done in the box's local frame
+  // so rotation is handled exactly. origin/dir are world-space; dir need not be normalized, but
+  // outT is then expressed in units of |dir| (pass a normalized dir to get true distances).
+  // Returns true and fills outT = {tEntry, tExit} (clamped to [tMin,tMax]) on intersection.
+  boolean intersectRaySlab(PVector origin, PVector dir, float tMin, float tMax, float[] outT)
+  {
+    PVector lo = worldToLocal(origin, false);
+    PVector ld = worldToLocal(dir, true);
+
+    float t0 = tMin;
+    float t1 = tMax;
+
+    float[] o = { lo.x, lo.y, lo.z };
+    float[] d = { ld.x, ld.y, ld.z };
+    float[] mn = { -size_x, 0, -size_z };
+    float[] mx = { size_x, size_y, size_z };
+
+    for (int axis = 0; axis < 3; axis++)
+    {
+      if (Math.abs(d[axis]) < 1e-12f)
+      {
+        if (o[axis] < mn[axis] || o[axis] > mx[axis])
+          return false;
+        continue;
+      }
+
+      float invD = 1.0f / d[axis];
+      float tNear = (mn[axis] - o[axis]) * invD;
+      float tFar = (mx[axis] - o[axis]) * invD;
+      if (tNear > tFar)
+      {
+        float tmp = tNear;
+        tNear = tFar;
+        tFar = tmp;
+      }
+
+      t0 = Math.max(t0, tNear);
+      t1 = Math.min(t1, tFar);
+
+      if (t0 > t1)
+        return false;
+    }
+
+    outT[0] = t0;
+    outT[1] = t1;
+    return true;
+  }
+
+  // Diagonal length of the box volume, used to scale a per-box self-occlusion epsilon.
+  float getDiagonal()
+  {
+    return sqrt(sq(2 * size_x) + sq(size_y) + sq(2 * size_z));
   }
 }
 

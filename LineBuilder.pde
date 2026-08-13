@@ -1,9 +1,12 @@
-class LineBuilder
+class LineBuilder implements BVH3DRayTest
 {
   static final int STAGE_IDLE = 0;
   static final int STAGE_COLLECT = 1;
-  static final int STAGE_RASTERIZE = 2;
-  static final int STAGE_EMIT = 3;
+  static final int STAGE_EMIT = 2;
+
+  // Numeric floor for BVH ray queries: avoids picking up a hit at literally t=0
+  // (the biased sample origin itself) regardless of which box owns/doesn't own the edge.
+  static final float QUERY_T_MIN = 0.0001;
 
   BoxGridData data;
   PolylineGroup previewGroup = new PolylineGroup();
@@ -11,22 +14,32 @@ class LineBuilder
   ArrayList<Mesh> sourceMeshes = null;
   PolylineGroup finalGroup = null;
   ArrayList<EdgeProjected> edges = new ArrayList<EdgeProjected>();
-  ArrayList<TriangleProjected> triangles = new ArrayList<TriangleProjected>();
+  ArrayList<OccluderBox> occluders = new ArrayList<OccluderBox>();
+  BVH3D bvh = new BVH3D();
+  float orthoRayTMax = 1000;
+
+  // Scratch state for the current testObject() call, set just before each bvh.anyHit()
+  // so the ray-test callback can tell "the edge's own box" from "any other occluder"
+  // without allocating a closure per sample (see isSampleVisible/testObject).
+  int currentOwnerIndex = -1;
+  float currentOwnerEps = 0.001;
+  float[] scratchT = new float[2];
 
   CameraFrame frame = null;
-  double[] zbuf = null;
-  float minX, maxX, minY, maxY;
-  int zW = 0;
-  int zH = 0;
 
   int stage = STAGE_IDLE;
   int meshIndex = 0;
-  int triangleIndex = 0;
   int edgeIndex = 0;
   boolean busy = false;
   boolean occlusionMode = false;
   long startNs = 0;
   int last_occlusion_debug_ms = -100000;
+
+  // meshListVersion (declared in trace_3d.pde, bumped once in buildBoxes()) lets us skip
+  // rebuilding occluders/BVH on camera-only or occlusion-param-only rebuilds - by far the
+  // most frequent interaction (orbiting the camera never touches box geometry).
+  int indexedMeshListVersion = -1;
+  boolean rebuildingOccluders = true;
 
   LineBuilder(BoxGridData data)
   {
@@ -68,12 +81,15 @@ class LineBuilder
     occlusionMode = true;
     stage = STAGE_COLLECT;
     meshIndex = 0;
-    triangleIndex = 0;
     edgeIndex = 0;
     edges.clear();
-    triangles.clear();
     frame = data.camera.buildFrame();
-    zbuf = null;
+
+    int currentMeshCount = (sourceMeshes == null) ? 0 : sourceMeshes.size();
+    rebuildingOccluders = (indexedMeshListVersion != meshListVersion) || (occluders.size() != currentMeshCount);
+
+    if (rebuildingOccluders)
+      occluders.clear();
   }
 
   void stopBuild()
@@ -96,25 +112,21 @@ class LineBuilder
       {
         if (meshIndex >= sourceMeshes.size())
         {
-          prepareRasterization();
-          stage = STAGE_RASTERIZE;
-          continue;
-        }
+          if (rebuildingOccluders)
+            indexedMeshListVersion = meshListVersion;
 
-        sourceMeshes.get(meshIndex).appendProjectedOcclusionGeometry(edges, triangles, data.camera, frame);
-        meshIndex++;
-      }
-      else if (stage == STAGE_RASTERIZE)
-      {
-        if (triangleIndex >= triangles.size())
-        {
+          prepareEmit(rebuildingOccluders);
           stage = STAGE_EMIT;
           finalGroup.clear();
           edgeIndex = 0;
           continue;
         }
 
-        triangleIndex = rasterizeTrianglesToDepthBufferRange(triangleIndex, deadlineNs);
+        Mesh mesh = sourceMeshes.get(meshIndex);
+        if (rebuildingOccluders)
+          occluders.add(mesh.buildOccluder());
+        mesh.appendProjectedEdges(edges, data.camera, frame, meshIndex);
+        meshIndex++;
       }
       else if (stage == STAGE_EMIT)
       {
@@ -138,110 +150,68 @@ class LineBuilder
     return !busy;
   }
 
-  void prepareRasterization()
+  // Refreshes the user-tunable self-occlusion epsilon on every occluder (cheap, must
+  // happen even when reusing occluders, since the eps scale slider can change without a
+  // mesh rebuild). When rebuildBVH is true, also rebuilds the BVH broad-phase and (for
+  // ortho mode) the scene-scale ray length - both purely geometric, so safe to skip
+  // whenever the box list itself hasn't changed (see indexedMeshListVersion).
+  void prepareEmit(boolean rebuildBVH)
   {
-    float[] domain = getOcclusionDomain();
-    minX = domain[0];
-    maxX = domain[1];
-    minY = domain[2];
-    maxY = domain[3];
+    int n = occluders.size();
 
-    zW = max(64, (int)(width * data.occlusion.zbuffer_scale));
-    zH = max(64, (int)(height * data.occlusion.zbuffer_scale));
-    zbuf = new double[zW * zH];
-    for (int i = 0; i < zbuf.length; i++)
-      zbuf[i] = Double.MAX_VALUE;
-  }
-
-  float[] getOcclusionDomain()
-  {
-    float safeScale = max(0.001, data.page.global_scale);
-    float halfW = width / (2.0 * safeScale);
-    float halfH = height / (2.0 * safeScale);
-
-    if (data.page.clipping)
+    for (int i = 0; i < n; i++)
     {
-      halfW = min(halfW, data.page.clip_width * 0.5);
-      halfH = min(halfH, data.page.clip_height * 0.5);
+      OccluderBox occ = occluders.get(i);
+      occ.epsilon = max(0.001, data.occlusion.self_occlusion_eps_scale * occ.diagonal);
     }
 
-    return new float[] { -halfW, halfW, -halfH, halfH };
-  }
+    if (!rebuildBVH)
+      return;
 
-  int rasterizeTrianglesToDepthBufferRange(int startIndex, long deadlineNs)
-  {
-    for (int i = startIndex; i < triangles.size(); i++)
+    float[] minXs = new float[n];
+    float[] minYs = new float[n];
+    float[] minZs = new float[n];
+    float[] maxXs = new float[n];
+    float[] maxYs = new float[n];
+    float[] maxZs = new float[n];
+
+    float sceneMinX = Float.MAX_VALUE, sceneMinY = Float.MAX_VALUE, sceneMinZ = Float.MAX_VALUE;
+    float sceneMaxX = -Float.MAX_VALUE, sceneMaxY = -Float.MAX_VALUE, sceneMaxZ = -Float.MAX_VALUE;
+
+    for (int i = 0; i < n; i++)
     {
-      if (System.nanoTime() >= deadlineNs)
-        return i;
+      OccluderBox occ = occluders.get(i);
 
-      TriangleProjected t = triangles.get(i);
+      minXs[i] = occ.minX; minYs[i] = occ.minY; minZs[i] = occ.minZ;
+      maxXs[i] = occ.maxX; maxYs[i] = occ.maxY; maxZs[i] = occ.maxZ;
 
-      if (t.a.z <= 0 || t.b.z <= 0 || t.c.z <= 0)
-        continue;
-
-      double x0 = mapToBufferX((double)t.a.x, (double)minX, (double)maxX, zW);
-      double y0 = mapToBufferY((double)t.a.y, (double)minY, (double)maxY, zH);
-      double x1 = mapToBufferX((double)t.b.x, (double)minX, (double)maxX, zW);
-      double y1 = mapToBufferY((double)t.b.y, (double)minY, (double)maxY, zH);
-      double x2 = mapToBufferX((double)t.c.x, (double)minX, (double)maxX, zW);
-      double y2 = mapToBufferY((double)t.c.y, (double)minY, (double)maxY, zH);
-
-      double area = edgeFunctionD(x0, y0, x1, y1, x2, y2);
-      if (Math.abs(area) < 1e-12)
-        continue;
-
-      int minPx = Math.max(0, (int)Math.floor(Math.min(x0, Math.min(x1, x2))));
-      int maxPx = Math.min(zW - 1, (int)Math.ceil(Math.max(x0, Math.max(x1, x2))));
-      int minPy = Math.max(0, (int)Math.floor(Math.min(y0, Math.min(y1, y2))));
-      int maxPy = Math.min(zH - 1, (int)Math.ceil(Math.max(y0, Math.max(y1, y2))));
-
-      for (int py = minPy; py <= maxPy; py++)
-      {
-        double cy = py + 0.5;
-        for (int px = minPx; px <= maxPx; px++)
-        {
-          if (System.nanoTime() >= deadlineNs)
-            return i;
-
-          double cx = px + 0.5;
-
-          double w0 = edgeFunctionD(x1, y1, x2, y2, cx, cy) / area;
-          double w1 = edgeFunctionD(x2, y2, x0, y0, cx, cy) / area;
-          double w2 = edgeFunctionD(x0, y0, x1, y1, cx, cy) / area;
-
-          boolean inside = (w0 >= 0 && w1 >= 0 && w2 >= 0) || (w0 <= 0 && w1 <= 0 && w2 <= 0);
-          if (!inside)
-            continue;
-
-          double z;
-          if (data.camera.projection_mode == CameraData.PROJECTION_PERSPECTIVE)
-          {
-            double invz = w0 * t.a.invz + w1 * t.b.invz + w2 * t.c.invz;
-            if (invz <= 1e-9)
-              continue;
-            z = 1.0 / invz;
-          }
-          else
-          {
-            z = w0 * t.a.z + w1 * t.b.z + w2 * t.c.z;
-            if (z <= 0)
-              continue;
-          }
-
-          int idx = px + py * zW;
-          if (z < zbuf[idx])
-            zbuf[idx] = z;
-        }
-      }
+      if (occ.minX < sceneMinX) sceneMinX = occ.minX;
+      if (occ.minY < sceneMinY) sceneMinY = occ.minY;
+      if (occ.minZ < sceneMinZ) sceneMinZ = occ.minZ;
+      if (occ.maxX > sceneMaxX) sceneMaxX = occ.maxX;
+      if (occ.maxY > sceneMaxY) sceneMaxY = occ.maxY;
+      if (occ.maxZ > sceneMaxZ) sceneMaxZ = occ.maxZ;
     }
 
-    return triangles.size();
+    bvh.build(minXs, minYs, minZs, maxXs, maxYs, maxZs);
+
+    if (n > 0)
+    {
+      float dx = sceneMaxX - sceneMinX;
+      float dy = sceneMaxY - sceneMinY;
+      float dz = sceneMaxZ - sceneMinZ;
+      orthoRayTMax = 2.0 * sqrt(dx * dx + dy * dy + dz * dz) + 1.0;
+    }
+    else
+    {
+      orthoRayTMax = 1000;
+    }
   }
 
   int emitVisibleEdgeSegmentsRange(int startIndex, long deadlineNs, PolylineGroup outGroup)
   {
     float stepPx = max(0.25, data.occlusion.sample_step_px);
+    int bisectIters = (int)constrain(data.occlusion.bisection_iterations, 1, 32);
 
     for (int i = startIndex; i < edges.size(); i++)
     {
@@ -252,22 +222,14 @@ class LineBuilder
       if (e.a.z <= 0 || e.b.z <= 0)
         continue;
 
-      float sx0 = mapToBufferX(e.a.x, minX, maxX, zW);
-      float sy0 = mapToBufferY(e.a.y, minY, maxY, zH);
-      float sx1 = mapToBufferX(e.b.x, minX, maxX, zW);
-      float sy1 = mapToBufferY(e.b.y, minY, maxY, zH);
-
-      float segLenPx = dist(sx0, sy0, sx1, sy1);
+      float segLenPx = dist(e.a.x, e.a.y, e.b.x, e.b.y);
       int steps = max(1, (int)ceil(segLenPx / stepPx));
 
-      boolean runVisible = false;
-      int hiddenStreak = 0;
-      PVector runStart2D = null;
-      PVector runEnd2D = null;
-      float runStartSX = 0;
-      float runStartSY = 0;
-      float runEndSX = 0;
-      float runEndSY = 0;
+      boolean runOpen = false;
+      float runStartT = 0;
+
+      boolean prevVisible = false;
+      float prevT = 0;
 
       for (int s = 0; s <= steps; s++)
       {
@@ -275,76 +237,177 @@ class LineBuilder
           return i;
 
         float t = s / (float)steps;
+        boolean visible = isSampleVisibleAtT(e, t);
 
-        float x = lerp(e.a.x, e.b.x, t);
-        float y = lerp(e.a.y, e.b.y, t);
-        float z;
-        if (data.camera.projection_mode == CameraData.PROJECTION_PERSPECTIVE)
+        if (s == 0)
         {
-          float invz = lerp(e.a.invz, e.b.invz, t);
-          if (invz <= 1e-9)
-            continue;
-          z = 1.0 / invz;
-        }
-        else
-        {
-          z = lerp(e.a.z, e.b.z, t);
-        }
-
-        float sx = mapToBufferX(x, minX, maxX, zW);
-        float sy = mapToBufferY(y, minY, maxY, zH);
-
-        boolean visible = isVisibleAgainstDepth(z, sx, sy, zbuf, zW, zH, data.occlusion.depth_bias);
-
-        if (visible)
-        {
-          hiddenStreak = 0;
-          if (!runVisible)
+          prevVisible = visible;
+          prevT = t;
+          if (visible)
           {
-            runVisible = true;
-            runStart2D = new PVector(x, y);
-            runEnd2D = new PVector(x, y);
-            runStartSX = sx;
-            runStartSY = sy;
-            runEndSX = sx;
-            runEndSY = sy;
+            runOpen = true;
+            runStartT = t;
           }
-          else
+          continue;
+        }
+
+        if (visible != prevVisible)
+        {
+          float transitionT = bisectTransition(e, prevT, t, prevVisible, bisectIters);
+
+          if (visible)
           {
-            runEnd2D = new PVector(x, y);
-            runEndSX = sx;
-            runEndSY = sy;
+            runOpen = true;
+            runStartT = transitionT;
+          }
+          else if (runOpen)
+          {
+            emitRunIfLongEnough(e, runStartT, transitionT, outGroup);
+            runOpen = false;
           }
         }
-        else if (runVisible)
-        {
-          hiddenStreak++;
 
-          if (hiddenStreak >= 2)
-          {
-            if (dist(runStartSX, runStartSY, runEndSX, runEndSY) >= data.occlusion.min_visible_segment_px)
-            {
-              Polyline line = new Polyline();
-              line.addPoint(runStart2D);
-              line.addPoint(runEnd2D);
-              outGroup.add(line);
-            }
-            runVisible = false;
-            hiddenStreak = 0;
-          }
-        }
+        prevVisible = visible;
+        prevT = t;
       }
 
-      if (runVisible && dist(runStartSX, runStartSY, runEndSX, runEndSY) >= data.occlusion.min_visible_segment_px)
-      {
-        Polyline line = new Polyline();
-        line.addPoint(runStart2D);
-        line.addPoint(runEnd2D);
-        outGroup.add(line);
-      }
+      if (runOpen)
+        emitRunIfLongEnough(e, runStartT, 1.0, outGroup);
     }
 
     return edges.size();
+  }
+
+  boolean isSampleVisibleAtT(EdgeProjected e, float t)
+  {
+    float sx = lerp(e.a.x, e.b.x, t);
+    float sy = lerp(e.a.y, e.b.y, t);
+    float z;
+
+    if (data.camera.projection_mode == CameraData.PROJECTION_PERSPECTIVE)
+    {
+      float invz = lerp(e.a.invz, e.b.invz, t);
+      if (invz <= 1e-9)
+        return false;
+      z = 1.0 / invz;
+    }
+    else
+    {
+      z = lerp(e.a.z, e.b.z, t);
+    }
+
+    if (data.page.clipping && isOutsideClipDomain(sx, sy))
+      return false;
+
+    PVector worldPoint = data.camera.unprojectPoint(sx, sy, z, frame);
+    return isSampleVisible(worldPoint, e.ownerOccluderIndex);
+  }
+
+  boolean isOutsideClipDomain(float sx, float sy)
+  {
+    float halfW = data.page.clip_width * 0.5;
+    float halfH = data.page.clip_height * 0.5;
+    return (sx < -halfW || sx > halfW || sy < -halfH || sy > halfH);
+  }
+
+  // Binary search on screen-space t between two samples of known (and differing) visibility,
+  // converging to the exact transition point instead of snapping to the sampling grid.
+  float bisectTransition(EdgeProjected e, float tKnown, float tOther, boolean knownVisible, int iterations)
+  {
+    float tLo = tKnown;
+    float tHi = tOther;
+
+    for (int k = 0; k < iterations; k++)
+    {
+      float mid = (tLo + tHi) * 0.5;
+      boolean midVisible = isSampleVisibleAtT(e, mid);
+      if (midVisible == knownVisible)
+        tLo = mid;
+      else
+        tHi = mid;
+    }
+
+    return (tLo + tHi) * 0.5;
+  }
+
+  void emitRunIfLongEnough(EdgeProjected e, float t0, float t1, PolylineGroup outGroup)
+  {
+    float x0 = lerp(e.a.x, e.b.x, t0);
+    float y0 = lerp(e.a.y, e.b.y, t0);
+    float x1 = lerp(e.a.x, e.b.x, t1);
+    float y1 = lerp(e.a.y, e.b.y, t1);
+
+    if (dist(x0, y0, x1, y1) < data.occlusion.min_visible_segment_px)
+      return;
+
+    Polyline line = new Polyline();
+    line.addPoint(new PVector(x0, y0));
+    line.addPoint(new PVector(x1, y1));
+    outGroup.add(line);
+  }
+
+  // Casts a line-of-sight ray from worldPoint toward the camera and tests it against the
+  // BVH of occluder boxes. The ray origin is biased outward (away from the owning box's
+  // center) by that box's epsilon to damp exact-surface numerical noise; testObject()
+  // then applies a stricter threshold specifically when the candidate IS the owning box
+  // (self-occlusion), and accepts any other box's hit as occlusion.
+  boolean isSampleVisible(PVector worldPoint, int ownerIndex)
+  {
+    OccluderBox ownerOcc = occluders.get(ownerIndex);
+
+    PVector outwardDir = PVector.sub(worldPoint, ownerOcc.worldCenter);
+    if (outwardDir.magSq() < 1e-12)
+      outwardDir.set(0, 1, 0);
+    else
+      outwardDir.normalize();
+
+    float eps = ownerOcc.epsilon;
+    PVector biasedOrigin = PVector.add(worldPoint, PVector.mult(outwardDir, eps));
+
+    PVector dir;
+    float tMax;
+
+    if (data.camera.projection_mode == CameraData.PROJECTION_PERSPECTIVE)
+    {
+      dir = PVector.sub(frame.camera_pos, biasedOrigin);
+      tMax = dir.mag();
+      if (tMax < 1e-6)
+        return true;
+      dir.normalize();
+    }
+    else
+    {
+      dir = PVector.mult(frame.forward, -1);
+      tMax = orthoRayTMax;
+    }
+
+    currentOwnerIndex = ownerIndex;
+    currentOwnerEps = eps;
+
+    boolean occluded = bvh.anyHit(biasedOrigin, dir, QUERY_T_MIN, tMax, this);
+    return !occluded;
+  }
+
+  // BVH3DRayTest callback: exact ray-OBB test per candidate, with the self/other
+  // epsilon split described on isSampleVisible().
+  boolean testObject(int objectIndex, PVector origin, PVector dir, float tMin, float tMax)
+  {
+    OccluderBox occ = occluders.get(objectIndex);
+
+    if (!occ.box.intersectRaySlab(origin, dir, tMin, tMax, scratchT))
+      return false;
+
+    if (objectIndex == currentOwnerIndex)
+    {
+      // The ray always starts essentially ON the owning box's own surface, so tEntry is
+      // near-zero whether this is a genuine self-occlusion (ray travels deep through the
+      // box before exiting) or just a grazing touch at a silhouette edge (near-zero chord).
+      // The chord length (tExit - tEntry) is what actually distinguishes the two cases.
+      float chordLength = scratchT[1] - scratchT[0];
+      return chordLength > currentOwnerEps * 4;
+    }
+
+    return true;
   }
 
   void draw(boolean clipping, float clipWidth, float clipHeight)
@@ -395,10 +458,8 @@ class LineBuilder
   {
     if (stage == STAGE_COLLECT)
       return 1;
-    if (stage == STAGE_RASTERIZE)
-      return 2;
     if (stage == STAGE_EMIT)
-      return 3;
+      return 2;
     return 0;
   }
 
@@ -406,8 +467,6 @@ class LineBuilder
   {
     if (stage == STAGE_COLLECT)
       return "collecting";
-    if (stage == STAGE_RASTERIZE)
-      return "rasterizing";
     if (stage == STAGE_EMIT)
       return "emitting";
     return "idle";
@@ -421,8 +480,6 @@ class LineBuilder
     float meshCount = max(1, sourceMeshes.size());
     if (stage == STAGE_COLLECT)
       return meshIndex / meshCount;
-    if (stage == STAGE_RASTERIZE)
-      return (triangles.size() <= 0) ? 0 : triangleIndex / (float)max(1, triangles.size());
     if (stage == STAGE_EMIT)
       return (edges.size() <= 0) ? 0 : edgeIndex / (float)max(1, edges.size());
 
@@ -436,11 +493,9 @@ class LineBuilder
 
     float meshCount = max(1, sourceMeshes.size());
     if (stage == STAGE_COLLECT)
-      return 0.33 * (meshIndex / meshCount);
-    if (stage == STAGE_RASTERIZE)
-      return 0.33 + 0.34 * (triangles.size() <= 0 ? 0 : triangleIndex / (float)max(1, triangles.size()));
+      return 0.5 * (meshIndex / meshCount);
     if (stage == STAGE_EMIT)
-      return 0.67 + 0.33 * (edges.size() <= 0 ? 0 : edgeIndex / (float)max(1, edges.size()));
+      return 0.5 + 0.5 * (edges.size() <= 0 ? 0 : edgeIndex / (float)max(1, edges.size()));
 
     return 0.0;
   }
@@ -450,65 +505,11 @@ class LineBuilder
     if (!busy)
       return "idle";
 
-    return getPhaseIndex() + "/3 " + getPhaseName() + " " + int(getPhaseProgress01() * 100) + "%";
+    return getPhaseIndex() + "/2 " + getPhaseName() + " " + int(getPhaseProgress01() * 100) + "%";
   }
 
   float getElapsedMs()
   {
     return (System.nanoTime() - startNs) / 1000000.0;
-  }
-
-  boolean isVisibleAgainstDepth(float z, float sx, float sy, double[] zbuf, int zW, int zH, float depthBias)
-  {
-    int ix = (int)round(sx);
-    int iy = (int)round(sy);
-    if (ix < 0 || ix >= zW || iy < 0 || iy >= zH)
-      return !data.page.clipping;
-
-    double neighborhoodMax = -Double.MAX_VALUE;
-    for (int oy = -1; oy <= 1; oy++)
-    {
-      int py = iy + oy;
-      if (py < 0 || py >= zH) continue;
-      for (int ox = -1; ox <= 1; ox++)
-      {
-        int px = ix + ox;
-        if (px < 0 || px >= zW) continue;
-        double zv = zbuf[px + py * zW];
-        if (zv < Double.MAX_VALUE && zv > neighborhoodMax)
-          neighborhoodMax = zv;
-      }
-    }
-
-    if (neighborhoodMax == -Double.MAX_VALUE)
-      return true;
-
-    double effectiveBias = Math.max((double)depthBias, 0.0025 * z);
-    return z <= neighborhoodMax + effectiveBias;
-  }
-
-  float mapToBufferX(float x, float minX, float maxX, int zW)
-  {
-    return (x - minX) / max(1e-6, maxX - minX) * (zW - 1);
-  }
-
-  double mapToBufferX(double x, double minX, double maxX, int zW)
-  {
-    return (x - minX) / Math.max(1e-12, maxX - minX) * (zW - 1);
-  }
-
-  float mapToBufferY(float y, float minY, float maxY, int zH)
-  {
-    return (y - minY) / max(1e-6, maxY - minY) * (zH - 1);
-  }
-
-  double mapToBufferY(double y, double minY, double maxY, int zH)
-  {
-    return (y - minY) / Math.max(1e-12, maxY - minY) * (zH - 1);
-  }
-
-  double edgeFunctionD(double ax, double ay, double bx, double by, double px, double py)
-  {
-    return (px - ax) * (by - ay) - (py - ay) * (bx - ax);
   }
 }

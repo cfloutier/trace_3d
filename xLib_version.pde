@@ -1,12 +1,26 @@
 String get_xlib_version()
 {
-  return "3.6.0";
+  return "3.7.0";
 }
 
 
 /*
 
  # CHANGELOG
+
+ ## [3.7.0] - 2026-08-13
+ - xLib_BVH3D: nouveau fichier — BVH générique (broad-phase spatial), traversée "any-hit" itérative sans allocation
+ - xLib_Box3D: ajout de intersectRaySlab() (intersection rayon/OBB exacte, méthode des slabs en repère local, gère la rotation),
+   computeWorldAABB(), getWorldGeometricCenter(), getDiagonal() — suppression de TRI_IDX et getProjectedVertices() (plus utilisés)
+ - xLib_Mesh: TriangleProjected supprimé ; EdgeProjected porte désormais les coordonnées monde + un index d'occludeur propriétaire ;
+   nouvelle classe OccluderBox (bbox monde + centre + diagonale + epsilon) ; Mesh.appendProjectedOcclusionGeometry()
+   remplacé par buildOccluder() + appendProjectedEdges() (sépare la géométrie monde, camera-indépendante, de la projection écran)
+ - xLib_CameraData: ajout de unprojectPoint() — inverse exact de projectPointWithDepth() (écran+profondeur -> monde),
+   perspective et ortho
+ - trace_3d: LineBuilder remplace le HLR par rastérisation z-buffer par un HLR analytique (ray-casting objet-space vers la
+   caméra + BVH, intersection rayon-boîte exacte, bissection pour les points de coupure), corrige les artefacts de visibilité
+   près des silhouettes et l'auto-occlusion (chord length au lieu du tEntry seul) ; DataOcclusion perd zbuffer_scale/depth_bias
+   au profit de bisection_iterations/self_occlusion_eps_scale
 
  ## [3.6.0] - 2026-07-17
  - xLib_Mesh: nouveau fichier avec Mesh (classe abstraite) + EdgeProjected + TriangleProjected

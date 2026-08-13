@@ -10,6 +10,7 @@ PGraphics current_graphics;
 ControlP5 cp5;
 
 ArrayList<Mesh> meshList = new ArrayList<Mesh>();
+int meshListVersion = 0;
 PolylineGroup lineGroup = new PolylineGroup();
 LineBuilder lineBuilder;
 
@@ -57,9 +58,9 @@ void draw()
   // if (occlusion_changed)
   // {
   //   println("[Occlusion] enabled=" + data.occlusion.enabled +
-  //     " zbuffer_scale=" + nf(data.occlusion.zbuffer_scale, 1, 2) +
   //     " sample_step_px=" + nf(data.occlusion.sample_step_px, 1, 2) +
-  //     " depth_bias=" + nf(data.occlusion.depth_bias, 1, 4) +
+  //     " bisection_iterations=" + data.occlusion.bisection_iterations +
+  //     " self_occlusion_eps_scale=" + nf(data.occlusion.self_occlusion_eps_scale, 1, 6) +
   //     " min_visible_segment_px=" + nf(data.occlusion.min_visible_segment_px, 1, 2));
   // }
 
@@ -136,4 +137,5 @@ void drawHud()
 void buildBoxes()
 {
   data.boxes.createMeshes(meshList);
+  meshListVersion++;
 }
