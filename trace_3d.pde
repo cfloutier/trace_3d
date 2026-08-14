@@ -47,6 +47,11 @@ void setupControls()
 {
   cp5 = new ControlP5(this);
   cp5.getTab("default").setLabel("Hide GUI");
+  // Drawn manually at the end of draw() instead (see drawControlP5()): auto-draw fires via
+  // a registerMethod("draw", ...) callback whose exact GL state at invocation we don't
+  // fully control, which is why hint(DISABLE_DEPTH_TEST) set earlier in our own draw()
+  // wasn't reliably still in effect by the time it actually rendered.
+  cp5.setAutoDraw(false);
   dataGui.Init();
 }
 
@@ -103,6 +108,21 @@ void draw()
   dataGui.draw();
   drawHud();
   drawClippingWarning();
+  drawControlP5();
+}
+
+// Drawn manually (autoDraw disabled in setupControls()) with the depth test forced off
+// immediately beforehand, nothing else running in between: Processing resets P3D's depth
+// test to enabled at the start of every frame, and the 2D line content + GUI are both
+// effectively at z=0, so without this the GUI (drawn last) loses the depth test wherever
+// a line was already drawn there, which reads as the GUI "showing through" the lines.
+void drawControlP5()
+{
+  hint(DISABLE_DEPTH_TEST);
+  hint(DISABLE_DEPTH_MASK);
+  cp5.draw();
+  hint(ENABLE_DEPTH_TEST);
+  hint(ENABLE_DEPTH_MASK);
 }
 
 void drawHud()

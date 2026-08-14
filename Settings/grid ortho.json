@@ -1,7 +1,6 @@
 {
   "Occlusion": {
     "sample_step_px": 1.25,
-    "min_visible_segment_px": 5.666666507720947,
     "self_occlusion_eps_scale": 1.0000000474974513E-4,
     "seam_edges_enabled": false,
     "bisection_iterations": 10,
@@ -13,7 +12,7 @@
     "lineWidth": 1.0833333730697632
   },
   "Page": {
-    "clipping": false,
+    "clipping": true,
     "clip_width": 800,
     "margin": 0,
     "clip_height": 600,
@@ -27,9 +26,9 @@
     "target_z": -111.14584350585938,
     "projection_mode": 0,
     "ortho_zoom": 0.3160000145435333,
-    "pitch": -0.5297985076904297,
+    "pitch": -0.5257964134216309,
     "fov": 55.333335876464844,
-    "yaw": 2.419997453689575
+    "yaw": 2.0599987506866455
   },
   "Boxes": {
     "random_seed": 160000,
@@ -45,9 +44,9 @@
       "box_length_min": 2000
     },
     "Grid": {
-      "spacing": 90,
+      "spacing": 364.9000244140625,
       "box_height": 1000,
-      "count": 400
+      "count": 3720
     },
     "distribution_mode": 0
   }

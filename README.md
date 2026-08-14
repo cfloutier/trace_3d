@@ -144,3 +144,9 @@ Le projet embarque des fichiers xLib_*.pde copies localement. Les evolutions glo
 
 - Hachures (shading) selon l orientation par rapport a la lumiere, attachees au mesh
   comme les aretes de couture (a venir).
+- Limitation connue: pendant le calcul HLR (busy), la GUI ControlP5 peut afficher des
+  artefacts visuels (lignes 2D visibles au travers, rendu de texte parfois corrompu) la
+  ou elle chevauche le contenu 3D/2D. Cause probable: interaction d etat GL entre le
+  rendu 3D natif (Preview3D) et l auto-draw de ControlP5, au dela d un simple hint
+  depth-test/depth-mask oublie (deja tente, insuffisant). Une fois le calcul termine,
+  le rendu est correct. Deprioritise pour l instant (cf. Preview3D.pde).

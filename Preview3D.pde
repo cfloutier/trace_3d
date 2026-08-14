@@ -63,7 +63,13 @@ class NativePreview3D
     // washed out/semi-transparent (being lit) instead of drawing as flat opaque color.
     target.noLights();
 
+    // DISABLE_DEPTH_TEST alone stops fragments being rejected against the depth buffer,
+    // but Processing tracks depth writes as a separate hint - without also disabling the
+    // mask, the box pass's real (non-zero) depth values stay written, and whatever draws
+    // next while depth test flips back on (e.g. next frame's default state) tests against
+    // them instead of getting a clean slate.
     target.hint(DISABLE_DEPTH_TEST);
+    target.hint(DISABLE_DEPTH_MASK);
   }
 
   // Mirrors CameraData.buildFrame()'s look-at basis via Processing's native camera(), and
