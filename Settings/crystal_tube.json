@@ -2,9 +2,10 @@
   "Occlusion": {
     "sample_step_px": 1.25,
     "min_visible_segment_px": 5.666666507720947,
-    "depth_bias": 0.3499999940395355,
-    "enabled": true,
-    "zbuffer_scale": 1.4200000762939453
+    "self_occlusion_eps_scale": 1.0000000474974513E-4,
+    "seam_edges_enabled": false,
+    "bisection_iterations": 10,
+    "enabled": true
   },
   "Style": {
     "backgroundColor": -16777216,
@@ -23,13 +24,12 @@
     "target_x": -37.79576110839844,
     "target_distance": 687.1578979492188,
     "target_y": -169.0797576904297,
-    "focal_distance": 1177.666748046875,
     "target_z": 75.35742950439453,
     "projection_mode": 1,
     "ortho_zoom": 1,
-    "pitch": -1.5657963752746582,
+    "pitch": -1.5697963237762451,
     "fov": 120,
-    "yaw": 1.5498526096343994
+    "yaw": 3.019850492477417
   },
   "Boxes": {
     "random_seed": 200000,

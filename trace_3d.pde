@@ -13,13 +13,14 @@ ArrayList<Mesh> meshList = new ArrayList<Mesh>();
 int meshListVersion = 0;
 PolylineGroup lineGroup = new PolylineGroup();
 LineBuilder lineBuilder;
+NativePreview3D preview3D = new NativePreview3D();
 
 float hud_last_lines_gen_ms = 0;
 float hud_last_render_ms = 0;
 
 void setup()
 {
-  size(1200, 800);
+  size(1200, 800, P3D);
   pixelDensity(1);
   surface.setResizable(true);
 

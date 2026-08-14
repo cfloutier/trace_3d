@@ -1,12 +1,19 @@
 String get_xlib_version()
 {
-  return "3.8.0";
+  return "3.9.0";
 }
 
 
 /*
 
  # CHANGELOG
+
+ ## [3.9.0] - 2026-08-13
+ - xLib_CameraData: suppression de focal_distance (et FOCAL_DISTANCE_MIN/MAX) — la focale perspective
+   repose desormais uniquement sur fov, via focal = (height * 0.5) / tan(radians(fov) * 0.5), la meme
+   relation qu'utilise perspective() de Processing en interne (aligne le modele de camera manuel 2D
+   sur un modele de vraie camera 3D, en vue d'un futur rendu 3D natif)
+ - xLib_Camera3D: CameraGUI perd le slider Focal Distance (fov reprend sa place en mode Perspective)
 
  ## [3.8.0] - 2026-08-13
  - xLib_BVH3D: ajout de queryOverlaps() — requête de recouvrement AABB (broad-phase), en plus du any-hit rayon existant

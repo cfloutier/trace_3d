@@ -4,8 +4,6 @@ class CameraData extends GenericData implements CameraProjector3D
   static final int PROJECTION_PERSPECTIVE = 1;
   static final float TARGET_DISTANCE_MIN = 50;
   static final float TARGET_DISTANCE_MAX = 10000;
-  static final float FOCAL_DISTANCE_MIN = 100;
-  static final float FOCAL_DISTANCE_MAX = 4000;
   static final float ORTHO_ZOOM_MIN = 0.05;
   static final float ORTHO_ZOOM_MAX = 20;
 
@@ -19,8 +17,6 @@ class CameraData extends GenericData implements CameraProjector3D
   float fov = 60;
   // Distance between camera and target (orbit radius).
   float target_distance = 900;
-  // Perspective focal distance scale (camera lens strength).
-  float focal_distance = 900;
   // Zoom factor used only in orthographic mode.
   float ortho_zoom = 1;
   float yaw = 0;
@@ -47,7 +43,11 @@ class CameraData extends GenericData implements CameraProjector3D
     PVector up = right.cross(forward, null);
     up.normalize();
 
-    float focal = focal_distance / tan(radians(fov) * 0.5);
+    // Ties focal length (in pixels) to fov and the actual canvas height, same relation
+    // Processing's own perspective() uses internally - keeps the manual 2D projection and
+    // any native 3D camera (perspective(radians(fov), aspect, near, far)) in lockstep,
+    // with no separate "lens strength" knob to reconcile between the two.
+    float focal = (height * 0.5) / tan(radians(fov) * 0.5);
     return new CameraFrame(camera_pos, right, up, forward, focal);
   }
 
@@ -190,7 +190,6 @@ class CameraData extends GenericData implements CameraProjector3D
     projection_mode = src.getInt("projection_mode", projection_mode);
     fov = src.getFloat("fov", fov);
     target_distance = src.getFloat("target_distance", target_distance);
-    focal_distance = src.getFloat("focal_distance", focal_distance);
     ortho_zoom = src.getFloat("ortho_zoom", ortho_zoom);
     yaw = src.getFloat("yaw", yaw);
     pitch = src.getFloat("pitch", pitch);
@@ -205,7 +204,6 @@ class CameraData extends GenericData implements CameraProjector3D
     dest.setInt("projection_mode", projection_mode);
     dest.setFloat("fov", fov);
     dest.setFloat("target_distance", target_distance);
-    dest.setFloat("focal_distance", focal_distance);
     dest.setFloat("ortho_zoom", ortho_zoom);
     dest.setFloat("yaw", yaw);
     dest.setFloat("pitch", pitch);

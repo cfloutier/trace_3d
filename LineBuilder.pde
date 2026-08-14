@@ -9,7 +9,6 @@ class LineBuilder implements BVH3DRayTest
   static final float QUERY_T_MIN = 0.0001;
 
   BoxGridData data;
-  PolylineGroup previewGroup = new PolylineGroup();
 
   ArrayList<Mesh> sourceMeshes = null;
   PolylineGroup finalGroup = null;
@@ -63,8 +62,6 @@ class LineBuilder implements BVH3DRayTest
 
     if (data.occlusion.enabled)
     {
-      previewGroup.clear();
-      buildPreviewWireframe();
       beginOcclusionBuild();
       return;
     }
@@ -73,15 +70,6 @@ class LineBuilder implements BVH3DRayTest
     finalGroup.clear();
     for (int i = 0; i < sourceMeshes.size(); i++)
       sourceMeshes.get(i).addWireframe(finalGroup, data.camera);
-  }
-
-  void buildPreviewWireframe()
-  {
-    previewGroup.clear();
-    if (sourceMeshes == null) return;
-
-    for (int i = 0; i < sourceMeshes.size(); i++)
-      sourceMeshes.get(i).addWireframe(previewGroup, data.camera);
   }
 
   void beginOcclusionBuild()
@@ -142,7 +130,6 @@ class LineBuilder implements BVH3DRayTest
       {
         if (edgeIndex >= edges.size())
         {
-          previewGroup.clear();
           stopBuild();
           if (millis() - last_occlusion_debug_ms > 250)
             last_occlusion_debug_ms = millis();
@@ -497,16 +484,23 @@ class LineBuilder implements BVH3DRayTest
     return true;
   }
 
+  // While an occlusion build is running: draw a real 3D backdrop (solid boxes, native
+  // Processing camera) instead of the old flat 2D wireframe preview, then overlay the
+  // 2D lines already resolved so far - but only once STAGE_EMIT has started, since
+  // finalGroup still holds the PREVIOUS build's (different camera angle) lines during
+  // STAGE_COLLECT and would show mismatched ghost lines if drawn then.
   void draw(boolean clipping, float clipWidth, float clipHeight)
   {
     pushStyle();
-    int c = data.style.lineColor.col;
-    int previewAlpha = 50;
-    current_graphics.stroke(red(c), green(c), blue(c), (busy && occlusionMode) ? previewAlpha : 255);
 
-    if (busy && occlusionMode && previewGroup.size() > 0)
-      previewGroup.draw(clipping, clipWidth, clipHeight);
-    else if (finalGroup != null)
+    if (busy && occlusionMode && !_record)
+      preview3D.renderAndComposite(current_graphics, data.camera, sourceMeshes);
+
+    int c = data.style.lineColor.col;
+    current_graphics.stroke(red(c), green(c), blue(c), 255);
+
+    boolean showFinalLines = !busy || !occlusionMode || stage == STAGE_EMIT;
+    if (showFinalLines && finalGroup != null)
       finalGroup.draw(clipping, clipWidth, clipHeight);
 
     popStyle();
@@ -514,21 +508,12 @@ class LineBuilder implements BVH3DRayTest
 
   int getDisplayLineCount()
   {
-    if (busy && occlusionMode)
-      return previewGroup.size();
-
     return (finalGroup != null) ? finalGroup.size() : 0;
   }
 
   BoundingBox getDisplayBoundingBox(boolean clipping, float clipWidth, float clipHeight)
   {
-    if (busy && occlusionMode && previewGroup.size() > 0)
-      return previewGroup.getBoundingBox(clipping, clipWidth, clipHeight);
-
-    if (finalGroup != null)
-      return finalGroup.getBoundingBox(clipping, clipWidth, clipHeight);
-
-    return new BoundingBox();
+    return (finalGroup != null) ? finalGroup.getBoundingBox(clipping, clipWidth, clipHeight) : new BoundingBox();
   }
 
   boolean isBusy()

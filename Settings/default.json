@@ -2,9 +2,10 @@
   "Occlusion": {
     "sample_step_px": 1.25,
     "min_visible_segment_px": 5.666666507720947,
-    "depth_bias": 0.3499999940395355,
-    "enabled": true,
-    "zbuffer_scale": 1.2400000095367432
+    "self_occlusion_eps_scale": 1.0000000474974513E-4,
+    "seam_edges_enabled": false,
+    "bisection_iterations": 10,
+    "enabled": true
   },
   "Style": {
     "backgroundColor": -16777216,
@@ -12,43 +13,42 @@
     "lineWidth": 1.0833333730697632
   },
   "Page": {
-    "clipping": false,
-    "clip_width": 800,
-    "margin": 0,
-    "clip_height": 600,
-    "paper_format": 1,
-    "global_scale": 1
+    "clipping": true,
+    "clip_width": 1186.666748046875,
+    "margin": 2,
+    "clip_height": 933.3333129882812,
+    "paper_format": 2,
+    "global_scale": 0.7146973013877869
   },
   "Camera": {
-    "target_x": -140.12875366210938,
-    "target_distance": 2179.780029296875,
-    "target_y": 76.17019653320312,
-    "focal_distance": 1177.666748046875,
-    "target_z": -111.14584350585938,
+    "target_x": -288.1797180175781,
+    "target_distance": 687.1578979492188,
+    "target_y": -612.6083984375,
+    "target_z": 280.6188659667969,
     "projection_mode": 1,
     "ortho_zoom": 1,
-    "pitch": 0.6502020359039307,
+    "pitch": -0.32579731941223145,
     "fov": 120,
-    "yaw": 1.3299992084503174
+    "yaw": 1.7698538303375244
   },
   "Boxes": {
-    "random_seed": 160000,
+    "random_seed": 203333,
     "Tube": {
-      "spacing": 43.79999923706055,
-      "radial_count": 108,
+      "spacing": 34.69999694824219,
+      "radial_count": 137,
       "base_y_min": -1240,
-      "radius_max": 600,
-      "base_y_max": 920,
-      "radius_min": 1412.699951171875,
+      "radius_max": 1072.4000244140625,
+      "base_y_max": 1853.33349609375,
+      "radius_min": 184.3000030517578,
       "box_length_max": 1509.13330078125,
-      "levels": 8,
-      "box_length_min": 2000
+      "levels": 41,
+      "box_length_min": 686.6000366210938
     },
     "Grid": {
       "spacing": 90,
-      "box_height": 1000,
+      "box_height": 120,
       "count": 400
     },
-    "distribution_mode": 0
+    "distribution_mode": 1
   }
 }

@@ -1,0 +1,54 @@
+{
+  "Occlusion": {
+    "sample_step_px": 1.25,
+    "min_visible_segment_px": 5.666666507720947,
+    "self_occlusion_eps_scale": 1.0000000474974513E-4,
+    "seam_edges_enabled": false,
+    "bisection_iterations": 10,
+    "enabled": true
+  },
+  "Style": {
+    "backgroundColor": -16777216,
+    "lineColor": -1,
+    "lineWidth": 1.0833333730697632
+  },
+  "Page": {
+    "clipping": false,
+    "clip_width": 800,
+    "margin": 0,
+    "clip_height": 600,
+    "paper_format": 1,
+    "global_scale": 1
+  },
+  "Camera": {
+    "target_x": -140.12875366210938,
+    "target_distance": 2179.780029296875,
+    "target_y": 76.17019653320312,
+    "target_z": -111.14584350585938,
+    "projection_mode": 0,
+    "ortho_zoom": 0.3160000145435333,
+    "pitch": -0.5297985076904297,
+    "fov": 55.333335876464844,
+    "yaw": 2.419997453689575
+  },
+  "Boxes": {
+    "random_seed": 160000,
+    "Tube": {
+      "spacing": 43.79999923706055,
+      "radial_count": 108,
+      "base_y_min": -1240,
+      "radius_max": 600,
+      "base_y_max": 920,
+      "radius_min": 1412.699951171875,
+      "box_length_max": 1509.13330078125,
+      "levels": 8,
+      "box_length_min": 2000
+    },
+    "Grid": {
+      "spacing": 90,
+      "box_height": 1000,
+      "count": 400
+    },
+    "distribution_mode": 0
+  }
+}

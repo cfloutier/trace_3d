@@ -8,7 +8,6 @@ class CameraGUI extends GUIPanel
   myRadioButton projection_mode;
   Slider fov;
   Slider target_distance;
-  Slider focal_distance;
   Slider ortho_zoom;
   Slider yaw;
   Slider pitch;
@@ -42,7 +41,6 @@ class CameraGUI extends GUIPanel
     projection_mode = addRadio("projection_mode", projection_modes);
     float start_pos = xPos;
     fov = addSlider("fov", "FOV", 10, 180);
-    focal_distance = addSlider("focal_distance", "Focal Distance", CameraData.FOCAL_DISTANCE_MIN, CameraData.FOCAL_DISTANCE_MAX);
     xPos = start_pos;
     ortho_zoom = addSlider("ortho_zoom", "Ortho Zoom", CameraData.ORTHO_ZOOM_MIN, CameraData.ORTHO_ZOOM_MAX);
 }
@@ -51,7 +49,6 @@ class CameraGUI extends GUIPanel
   {
     fov.setValue(camera.fov);
     target_distance.setValue(camera.target_distance);
-    focal_distance.setValue(camera.focal_distance);
     ortho_zoom.setValue(camera.ortho_zoom);
     yaw.setValue(camera.yaw);
     pitch.setValue(camera.pitch);
@@ -66,13 +63,11 @@ class CameraGUI extends GUIPanel
     if (is_ortho)
     {
       fov.hide();
-      focal_distance.hide();
       ortho_zoom.show();
     }
     else
     {
       fov.show();
-      focal_distance.show();
       ortho_zoom.hide();
     }
   }
@@ -88,7 +83,6 @@ class CameraGUI extends GUIPanel
   {
     fov.setValue(camera.fov);
     target_distance.setValue(camera.target_distance);
-    focal_distance.setValue(camera.focal_distance);
     ortho_zoom.setValue(camera.ortho_zoom);
     yaw.setValue(camera.yaw);
     pitch.setValue(camera.pitch);
