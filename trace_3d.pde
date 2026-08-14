@@ -38,6 +38,9 @@ void setup()
     hud_last_lines_gen_ms = lineBuilder.getElapsedMs();
 
   file_ui.export_group = lineGroup;  // enable direct SVG export
+  file_ui.export_busy_guard = new ExportBusyGuard() {
+    boolean isBusy() { return lineBuilder.isOcclusionBuilding(); }
+  };
 }
 
 void setupControls()
@@ -100,6 +103,7 @@ void draw()
 
   dataGui.draw();
   drawHud();
+  drawClippingWarning();
 }
 
 void drawHud()
@@ -132,6 +136,29 @@ void drawHud()
 
   fill(255);
   text(hud_text, x, y);
+  popStyle();
+}
+
+// Clipping (Page tab) isn't just a display crop here - the export-scale auto-fit
+// (updateExportScale, via getDisplayBoundingBox) relies on it to keep the bounding box
+// sane. Without it, a handful of numerically-unstable near-camera points can still blow
+// up the fit and leave nothing visible, and there's no defined page aspect ratio for the
+// camera to target. Not worth chasing further (clip_width/clip_height/clipping are shared
+// DataPage fields used by several other, mostly 2D, projects - not something to rework
+// here) - just make the unsupported state obvious instead.
+void drawClippingWarning()
+{
+  if (_record)
+    return;
+
+  if (data.page.clipping)
+    return;
+
+  pushStyle();
+  textAlign(CENTER, CENTER);
+  textSize(28);
+  fill(255, 40, 40);
+  text("CLIPPING DESACTIVE - resultat non garanti", width / 2, height / 2);
   popStyle();
 }
 

@@ -262,12 +262,19 @@ class LineBuilder implements BVH3DRayTest
   // so (unlike buildSeamEdges) this runs on every rebuild, same as regular mesh edges.
   void projectSeamEdges()
   {
+    PVector[] outWorld = new PVector[2];
+    ProjectedPoint[] outProjected = new ProjectedPoint[2];
+
     for (int i = 0; i < seamEdges.size(); i++)
     {
       SeamWorldEdge s = seamEdges.get(i);
       ProjectedPoint pa = data.camera.projectPointWithDepth(s.worldA, frame);
       ProjectedPoint pb = data.camera.projectPointWithDepth(s.worldB, frame);
-      edges.add(new EdgeProjected(pa, pb, s.worldA, s.worldB, s.ownerA, s.ownerB));
+
+      if (!clipSegmentToNearPlane(s.worldA, pa, s.worldB, pb, data.camera, frame, outWorld, outProjected))
+        continue;
+
+      edges.add(new EdgeProjected(outProjected[0], outProjected[1], outWorld[0], outWorld[1], s.ownerA, s.ownerB));
     }
   }
 

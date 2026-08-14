@@ -1,12 +1,25 @@
 String get_xlib_version()
 {
-  return "3.9.0";
+  return "3.10.0";
 }
 
 
 /*
 
  # CHANGELOG
+
+ ## [3.10.0] - 2026-08-14
+ - xLib_Camera3D: ajout de PROJECTION_NEAR_Z + clipSegmentToNearPlane() — clippe les segments
+   projetes contre un plan proche (1 unite monde), evite les coordonnees ecran instables
+   (division par z quasi-nul) qui faisaient exploser le bounding-box auto-fit et le nombre
+   d'echantillons par arete
+ - xLib_Box3D: appendProjectedEdges() utilise desormais clipSegmentToNearPlane() par arete
+ - trace_3d: LineBuilder.projectSeamEdges() applique le meme clip proche ; nouveau message
+   d'avertissement plein ecran quand Page.clipping est desactive (le fit d'echelle export
+   n'est pas garanti sans lui - non corrige plus avant, cf. commentaire dans trace_3d.pde)
+ - xLib_FileUI: FileGUI.ExportSVG() ne reference plus directement lineBuilder (fuite
+   specifique a trace_3d qui cassait la compilation des autres projets) - remplace par un
+   hook generique optionnel ExportBusyGuard (export_busy_guard), laisse a null par defaut
 
  ## [3.9.0] - 2026-08-13
  - xLib_CameraData: suppression de focal_distance (et FOCAL_DISTANCE_MIN/MAX) — la focale perspective
