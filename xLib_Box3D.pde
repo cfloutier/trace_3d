@@ -150,11 +150,20 @@ class Box3D extends Mesh
     for (int i = 0; i < worldVertices.length; i++)
       p[i] = camera.projectPointWithDepth(worldVertices[i], frame);
 
+    PVector[] outWorld = new PVector[2];
+    ProjectedPoint[] outProjected = new ProjectedPoint[2];
+
     for (int i = 0; i < EDGE_IDX.length; i++)
     {
+      int ia = EDGE_IDX[i][0];
+      int ib = EDGE_IDX[i][1];
+
+      if (!clipSegmentToNearPlane(worldVertices[ia], p[ia], worldVertices[ib], p[ib], camera, frame, outWorld, outProjected))
+        continue;
+
       edges.add(new EdgeProjected(
-        p[EDGE_IDX[i][0]], p[EDGE_IDX[i][1]],
-        worldVertices[EDGE_IDX[i][0]], worldVertices[EDGE_IDX[i][1]],
+        outProjected[0], outProjected[1],
+        outWorld[0], outWorld[1],
         ownerOccluderIndex));
     }
   }
