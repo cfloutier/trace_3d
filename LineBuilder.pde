@@ -332,7 +332,7 @@ class LineBuilder implements BVH3DRayTest
           }
           else if (runOpen)
           {
-            emitRunIfLongEnough(e, runStartT, transitionT, outGroup);
+            emitRun(e, runStartT, transitionT, outGroup);
             runOpen = false;
           }
         }
@@ -342,7 +342,7 @@ class LineBuilder implements BVH3DRayTest
       }
 
       if (runOpen)
-        emitRunIfLongEnough(e, runStartT, 1.0, outGroup);
+        emitRun(e, runStartT, 1.0, outGroup);
     }
 
     return edges.size();
@@ -400,15 +400,12 @@ class LineBuilder implements BVH3DRayTest
     return (tLo + tHi) * 0.5;
   }
 
-  void emitRunIfLongEnough(EdgeProjected e, float t0, float t1, PolylineGroup outGroup)
+  void emitRun(EdgeProjected e, float t0, float t1, PolylineGroup outGroup)
   {
     float x0 = lerp(e.a.x, e.b.x, t0);
     float y0 = lerp(e.a.y, e.b.y, t0);
     float x1 = lerp(e.a.x, e.b.x, t1);
     float y1 = lerp(e.a.y, e.b.y, t1);
-
-    if (dist(x0, y0, x1, y1) < data.occlusion.min_visible_segment_px)
-      return;
 
     Polyline line = new Polyline();
     line.addPoint(new PVector(x0, y0));

@@ -63,7 +63,6 @@ Quand Occlusion.enabled est actif, le rendu passe par un HLR analytique (ray-cas
 
 Parametres:
 - sample_step_px: pas d echantillonnage des aretes en espace ecran.
-- min_visible_segment_px: seuil anti-segments parasites.
 - bisection_iterations: nombre d iterations de bissection pour affiner un point de coupure de visibilite.
 - self_occlusion_eps_scale: facteur (x diagonale de la boite) de l epsilon anti auto-occlusion.
 - seam_edges_enabled: ajoute les aretes de "couture" aux zones d intersection entre boites (off par defaut, voir plus bas).
@@ -143,8 +142,5 @@ Le projet embarque des fichiers xLib_*.pde copies localement. Les evolutions glo
 
 ## TODO
 
-- Aretes de couture (voir Occlusion > seam_edges_enabled): quelques traits de quelques
-  pixels de long disparaissent parfois (filtrage min_visible_segment_px ou aliasing
-  d echantillonnage sur un run tres court) - juge negligeable pour l instant.
 - Hachures (shading) selon l orientation par rapport a la lumiere, attachees au mesh
   comme les aretes de couture (a venir).

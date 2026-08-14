@@ -64,8 +64,7 @@ void draw()
   //   println("[Occlusion] enabled=" + data.occlusion.enabled +
   //     " sample_step_px=" + nf(data.occlusion.sample_step_px, 1, 2) +
   //     " bisection_iterations=" + data.occlusion.bisection_iterations +
-  //     " self_occlusion_eps_scale=" + nf(data.occlusion.self_occlusion_eps_scale, 1, 6) +
-  //     " min_visible_segment_px=" + nf(data.occlusion.min_visible_segment_px, 1, 2));
+  //     " self_occlusion_eps_scale=" + nf(data.occlusion.self_occlusion_eps_scale, 1, 6));
   // }
 
   if (boxes_changed)

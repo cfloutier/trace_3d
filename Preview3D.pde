@@ -26,13 +26,14 @@ class NativePreview3D
 
     target.pushStyle();
     target.strokeWeight(1);
-    // Edges: 2/3 line color, 1/3 background. Fill: 1/3 line color, 2/3 background - both
-    // sit between the two style colors so the 3D backdrop reads as related to, but
-    // distinct from, the final line color (which draws at full lineColor on top of it).
+    // Edges: 1/3 line color, 2/3 background. Fill: 1/6 line color, 5/6 background - both
+    // sit closer to the background than before, so the 3D backdrop reads as a dim,
+    // clearly secondary layer under the final line color (drawn at full brightness on
+    // top of it once STAGE_EMIT starts).
     int bg = data.style.backgroundColor.col;
     int line = data.style.lineColor.col;
-    target.stroke(lerpColor(bg, line, 2.0 / 3.0));
-    target.fill(lerpColor(bg, line, 1.0 / 3.0));
+    target.stroke(lerpColor(bg, line, 1.0 / 3.0));
+    target.fill(lerpColor(bg, line, 1.0 / 6.0));
 
     if (meshes != null)
     {
