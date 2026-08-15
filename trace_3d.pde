@@ -75,7 +75,10 @@ void draw()
   if (boxes_changed)
     buildBoxes();
 
-  if (boxes_changed || camera_changed || occlusion_changed)
+  // stop_compute is set around Save/Save As/Load (see xLib_FileUI.pde) precisely to keep
+  // a save/load cycle from kicking off an unwanted rebuild (previously declared but never
+  // actually read anywhere).
+  if (!stop_compute && (boxes_changed || camera_changed || occlusion_changed))
   {
     lineBuilder.requestBuild(meshList, lineGroup);
     if (!lineBuilder.isBusy())

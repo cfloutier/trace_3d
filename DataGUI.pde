@@ -29,13 +29,22 @@ class DataGUI extends MainPanel
 
     super.Init();
 
-    cp5.getTab("Camera").bringToFront();
+    cp5.getTab("Meshes").bringToFront();
   }
 
   @Override
-  void mouseDragged()
+    void mouseDragged()
   {
     super.mouseDragged();
+
+    // See xLib_FileUI.pde saveSelected()/loadSelected(): absorbs the one spurious drag
+    // event that can follow a native file dialog closing, before it reaches the camera
+    // orbit/pan logic below.
+    if (suppressNextDrag)
+    {
+      suppressNextDrag = false;
+      return;
+    }
 
     // Camera interactions apply only when dragging the canvas, not GUI widgets/tabs.
     if (dragging_panel == null && !cp5.isMouseOver())
@@ -46,8 +55,7 @@ class DataGUI extends MainPanel
       if (mouseButton == RIGHT)
       {
         data.camera.panTargetByScreenDelta(dx, dy, data.page.global_scale);
-      }
-      else
+      } else
       {
         data.camera.yaw = data.camera.wrapAngle(data.camera.yaw + dx * 0.01);
         data.camera.pitch = constrain(data.camera.pitch + dy * 0.01, -HALF_PI + 0.001, HALF_PI - 0.001);
@@ -57,7 +65,7 @@ class DataGUI extends MainPanel
   }
 
   @Override
-  void mouseWheel(processing.event.MouseEvent event)
+    void mouseWheel(processing.event.MouseEvent event)
   {
     if (dragging_panel != null || cp5.isMouseOver())
       return;

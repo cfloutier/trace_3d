@@ -17,31 +17,31 @@
     "margin": 2,
     "clip_height": 793.3333740234375,
     "paper_format": 2,
-    "global_scale": 0.8667557835578918
+    "global_scale": 0.8824220895767212
   },
   "Camera": {
-    "target_x": -122.61520385742188,
+    "target_x": -455.2436828613281,
     "target_distance": 4631.93359375,
-    "target_y": 3309.114990234375,
-    "target_z": 65.90496063232422,
+    "target_y": 2489.04150390625,
+    "target_z": -596.7888793945312,
     "projection_mode": 1,
     "ortho_zoom": 1,
     "pitch": -1.5657963752746582,
     "fov": 61.56666946411133,
-    "yaw": 2.3699991703033447
+    "yaw": -2.563187837600708
   },
   "Boxes": {
-    "random_seed": 1025496570,
+    "random_seed": 1684426416,
     "Tube": {
-      "box_size": 39.900001525878906,
-      "base_y_min": -2000,
-      "box_multiplier": 5,
-      "radius_max": 665.7000122070312,
-      "base_y_max": 2000,
-      "radius_min": 1022.5999755859375,
+      "base_y_min": -4000,
+      "box_multiplier": 14,
+      "box_size": 36,
+      "radius_max": 914.7000122070312,
+      "base_y_max": 20000,
+      "radius_min": 1006,
       "box_length_max": 1509.13330078125,
       "levels": 8,
-      "box_count": 137,
+      "box_count": 344,
       "box_length_min": 686.6000366210938
     },
     "Grid": {

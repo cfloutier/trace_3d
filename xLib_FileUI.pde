@@ -202,6 +202,7 @@ class FileGUI extends GUIPanel
     {
       stop_compute = true;
       data.SaveSettings(data.settings_path);
+      stop_compute = false;
     }
   }
 
@@ -269,9 +270,7 @@ class FileGUI extends GUIPanel
 
 void saveSelected(File selection)
 {
-  if (selection == null)
-  {
-  } else
+  if (selection != null)
   {
     String path = selection.getAbsolutePath();
     if (path.length() < 5 || !path.substring(path.length() - 5).equals(".json"))
@@ -287,6 +286,13 @@ void saveSelected(File selection)
 
     file_ui.setGUIValues();
   }
+
+  // The native save dialog can leave mouseX/pmouseX far apart when focus returns to the
+  // sketch window (mouse moved while the dialog had it) - without this, DataGUI's next
+  // mouseDragged() reads that gap as a huge canvas drag and spuriously reorbits the
+  // camera, triggering an unwanted occlusion rebuild right after a save.
+  stop_compute = false;
+  suppressNextDrag = true;
 }
 
 
@@ -325,10 +331,15 @@ void loadSelected(File selection)
     data.LoadSettings(selection.getAbsolutePath());
     dataGui.setGUIValues();
   }
+
+  // See saveSelected() - same post-dialog spurious-drag guard.
+  stop_compute = false;
+  suppressNextDrag = true;
 }
 
 boolean _record = false;
 boolean stop_compute = false; // interrompt le calcul en cours lors d'un load/save
+boolean suppressNextDrag = false; // avale le prochain mouseDragged() apres une boite de dialogue native
 int mode  = 0;
 long _record_start_millis = 0;
 

@@ -33,14 +33,13 @@
   "Boxes": {
     "random_seed": 160000,
     "Tube": {
-      "spacing": 43.79999923706055,
-      "radial_count": 108,
+      "box_size": 43.79999923706055,
+      "box_count": 108,
       "base_y_min": -1240,
       "radius_max": 600,
       "base_y_max": 920,
       "radius_min": 1412.699951171875,
       "box_length_max": 1509.13330078125,
-      "levels": 8,
       "box_length_min": 2000
     },
     "Grid": {

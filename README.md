@@ -40,16 +40,16 @@ L onglet Meshes pilote la distribution des Box3D via un mode actif:
 
 Mode Grid:
 - count
-- spacing
+- box_size
 - box_height
 
 Mode Tube (aleatoire):
-- radial_count
+- box_count
 - levels
 - radius_min / radius_max
 - base_y_min / base_y_max
 - box_length_min / box_length_max
-- spacing (section X/Z des boxes)
+- box_size (section X/Z des boxes)
 
 La geometrie 3D est mise en cache dans meshList et n est reconstruite que si Meshes change.
 

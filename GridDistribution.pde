@@ -10,7 +10,7 @@ class GridDistributionData extends MeshDistributionData
   float box_height = 120;
 
   @Override
-  void createMeshes(ArrayList<Mesh> out_meshes, int random_seed)
+    void createMeshes(ArrayList<Mesh> out_meshes, int random_seed)
   {
     out_meshes.clear();
 
@@ -57,7 +57,7 @@ class GridDistributionGUI
   {
     controls = new ControlsGroup(data);
 
-    panel.addLabel("Grid");
+
     count = panel.addIntSlider("count", "Count", data, 1, 4000);
     controls.add(count);
     spacing = panel.addSlider("spacing", "Spacing", data, 10, 400);

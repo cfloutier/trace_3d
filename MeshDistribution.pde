@@ -46,7 +46,7 @@ class DataBoxes extends GenericData
     JSONObject grid_json = src.getJSONObject(grid.chapter_name);
     JSONObject tube_json = src.getJSONObject(tube.chapter_name);
 
-    
+
     grid.LoadJson(grid_json);
     tube.LoadJson(tube_json);
   }
@@ -79,17 +79,35 @@ class BoxesGUI extends GUIPanel
     this.tube_ui = new TubeDistributionGUI(boxes.tube);
   }
 
+  void setSeed()
+  {
+    Random rand = new Random(System.currentTimeMillis());
+    this.boxes.random_seed = rand.nextInt();
+    this.boxes.changed = true;
+  }
+
   void setupControls()
   {
     super.Init();
 
     ArrayList<String> distribution_modes = new ArrayList<String>();
+
     distribution_modes.add("Grid");
     distribution_modes.add("Tube");
-    random_seed = addIntSlider("random_seed", "Random Seed", boxes, 0, 1000000);
+
+    // random_seed = addIntSlider("random_seed", "Random Seed", boxes, 0, 1000000);
+    addButton("Front").plugTo(this, "setSeed");
+
     distribution_mode = addRadio("distribution_mode", distribution_modes);
 
+    nextLine();
+    float start_y_pos = yPos;
+
     grid_ui.setupControls(this);
+    nextLine();
+    // reset y pos for each style
+    yPos = start_y_pos;
+
     tube_ui.setupControls(this);
   }
 
@@ -102,9 +120,6 @@ class BoxesGUI extends GUIPanel
 
   void setGUIValues()
   {
-    if ((int)random_seed.getValue() != boxes.random_seed)
-      random_seed.setValue(boxes.random_seed);
-
     if ((int)distribution_mode.getValue() != boxes.distribution_mode)
       distribution_mode.activate(boxes.distribution_mode);
 
@@ -115,9 +130,6 @@ class BoxesGUI extends GUIPanel
 
   void update_ui()
   {
-    if ((int)random_seed.getValue() != boxes.random_seed)
-      random_seed.setValue(boxes.random_seed);
-
     if ((int)distribution_mode.getValue() != boxes.distribution_mode)
       distribution_mode.activate(boxes.distribution_mode);
 
