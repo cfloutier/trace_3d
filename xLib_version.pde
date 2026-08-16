@@ -1,12 +1,50 @@
 String get_xlib_version()
 {
-  return "3.10.0";
+  return "3.11.2";
 }
 
 
 /*
 
  # CHANGELOG
+
+ ## [3.11.2] - 2026-08-16
+ - xLib_FileUI: added bringNativeFileDialogToFront(), called after selectInput()/selectOutput()
+   in LoadJson()/SaveJson() (and xLib_Image.SelectSourceImage()) — works around a Processing/JOGL
+   quirk seen on trace_3d (P3D renderer) where the native file dialog opens behind the main
+   window (which can auto-minimize) instead of getting focus; not observed with the default
+   (non-OpenGL) renderer used by 2D projects like image_lines. Polls briefly (up to ~6s) for the
+   dialog window via java.awt.Window.getWindows() and forces it to front/focus once AWT creates it.
+   Fixes every LoadJson()/SaveJson() call except the very first one of a run (tried a
+   warmupNativeFileDialog() companion to pre-create AWT's native FileDialog peer at setup()
+   time on the theory that peer creation itself was racing with JOGL - didn't help, reverted;
+   first-call cause still unknown, left as a known minor quirk).
+
+ ## [3.11.1] - 2026-08-16
+ - xLib_ExportUtils: writeSVGDirect() (both overloads) reads file_ui.export_landscape instead of recomputing its
+   own local bbox-derived orientation — keeps orientation and export_scale tied to the same source, avoiding a
+   mismatch between the exported page's orientation and the scale used to fit the drawing on it
+ - image_lines: draw() now refreshes lines + updateExportScale() BEFORE start_draw() instead of after — previously
+   an export triggered right after a data change sized its canvas from the previous frame's stale orientation/scale
+   (fix should be mirrored in other xLib-consuming projects with the same any_change()-after-start_draw() ordering)
+ - Merged with main (3.10.0, trace_3d/3D camera line of work): combined with main's independent clip/centering fix
+   below — clipLineToCenteredRect() must run in raw drawing space (matching clip_width/clip_height, which are not
+   relative to the bbox center) before subtracting bcx/bcy, not after; bbox itself is now clip-aware too
+   (getBoundingBox(clipping, clip_w, clip_h)) so a clipped export centers on what's actually visible
+
+ ## [3.11.0] - 2026-08-15
+ - xLib_ExportUtils: removed the -90° auto-rotation of the drawing at export time (shouldRotateForExport() / export_should_rotate deleted)
+   The plotter now handles orientation itself, so it no longer needs to be baked into the SVG.
+ - xLib_ExportUtils: getPaperDimensions() gained a landscape parameter — the exported page orientation (portrait/landscape)
+   now follows the drawing's aspect ratio instead of always exporting a rotated portrait page
+ - xLib_ExportUtils: calculateExportScale() simplified — no longer takes a shouldRotate parameter
+ - xLib_ExportUtils: centeredToMM() simplified — no longer takes a rot parameter
+ - xLib_ExportUtils: postProcessSVGForPlotter() takes a landscape parameter instead of re-deriving portrait dimensions
+   (Processing fallback renderer path); rotate() transform regex removed (no longer emitted)
+ - xLib_FileUI: FileGUI.export_should_rotate renamed to export_landscape; start_draw() sizes the export canvas
+   using the landscape-aware paper dimensions instead of rotating the content with rotate(-PI/2)
+ (originally versioned 3.6.0/3.6.1 before merge — renumbered to 3.11.0/3.11.1 to follow main's 3.10.0,
+ since main independently used 3.6.0 onward for the trace_3d 3D-camera line of work below)
 
  ## [3.10.0] - 2026-08-14
  - xLib_Camera3D: ajout de PROJECTION_NEAR_Z + clipSegmentToNearPlane() — clippe les segments

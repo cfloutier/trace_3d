@@ -37,15 +37,6 @@ class DataGUI extends MainPanel
   {
     super.mouseDragged();
 
-    // See xLib_FileUI.pde saveSelected()/loadSelected(): absorbs the one spurious drag
-    // event that can follow a native file dialog closing, before it reaches the camera
-    // orbit/pan logic below.
-    if (suppressNextDrag)
-    {
-      suppressNextDrag = false;
-      return;
-    }
-
     // Camera interactions apply only when dragging the canvas, not GUI widgets/tabs.
     if (dragging_panel == null && !cp5.isMouseOver())
     {
