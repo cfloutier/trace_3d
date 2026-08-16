@@ -57,7 +57,7 @@ La geometrie 3D est mise en cache dans meshList et n est reconstruite que si Mes
 
 Quand Occlusion.enabled est actif, le rendu passe par un HLR analytique (ray-casting objet-space, pas de rasterization):
 1. Collecte: pour chaque Box3D, un occludeur (bbox monde + centre + diagonale) et ses 12 aretes projetees (coordonnees ecran + coordonnees monde).
-2. Un BVH (xLib_BVH3D) est construit sur les occludeurs; il n est reconstruit que si la liste de boites change (pas au simple drag camera).
+2. Un BVH (xlib3d_BVH3D) est construit sur les occludeurs; il n est reconstruit que si la liste de boites change (pas au simple drag camera).
 3. Emission: chaque arete est echantillonnee en espace ecran (meme parametrisation qu avant, correcte en perspective via 1/z). A chaque echantillon, le point est deprojete en 3D et un rayon est lance vers la camera contre le BVH pour tester la visibilite exacte (intersection rayon-boite fermee, gere la rotation). Sur un changement de visibilite entre deux echantillons, une bissection affine le point de coupure exact (au lieu de le caler sur la grille d echantillonnage).
 4. Auto-occlusion: l origine du rayon est biaisee vers l exterieur de la boite proprietaire de l arete, avec un epsilon proportionnel a la diagonale de cette boite; un seuil specifique evite qu une arete de silhouette s auto-occulte par erreur, tout en laissant une vraie auto-occlusion (face arriere) fonctionner normalement.
 
@@ -75,7 +75,7 @@ Notes:
 ### Aretes de couture (intersections entre boites)
 
 Quand Occlusion.seam_edges_enabled est actif, pour chaque paire de boites qui se
-recouvrent (reperees via BVH3D.queryOverlaps, broad-phase AABB), xLib_BoxIntersection
+recouvrent (reperees via BVH3D.queryOverlaps, broad-phase AABB), xlib3d_BoxIntersection
 calcule les segments ou une face de l une croise une face de l autre (intersection de
 plans + double decoupage rectangulaire) et les ajoute comme aretes supplementaires. Une
 arete de couture appartient visuellement aux deux boites a la fois (EdgeProjected porte
@@ -107,11 +107,11 @@ Fichiers principaux:
 - DataGlobal.pde: aggregation des chapitres de donnees.
 - DataGUI.pde: tabs GUI + interactions souris.
 - DataOcclusion.pde: parametres HLR + UI Occlusion.
-- xLib_Mesh.pde: abstraction Mesh + primitives projetees (EdgeProjected, OccluderBox).
-- xLib_Box3D.pde: decomposition d une box en aretes, intersection rayon-boite (OBB, slab method).
-- xLib_BVH3D.pde: BVH generique (broad-phase spatial) pour les requetes rayon "any-hit" et de recouvrement AABB.
-- xLib_BoxIntersection.pde: calcul des aretes de couture entre boites qui se recouvrent.
-- xLib_Camera3D.pde / xLib_CameraData.pde: projection camera + UI + deprojection ecran->monde.
+- xlib3d_Mesh.pde: abstraction Mesh + primitives projetees (EdgeProjected, OccluderBox).
+- xlib3d_Box3D.pde: decomposition d une box en aretes, intersection rayon-boite (OBB, slab method).
+- xlib3d_BVH3D.pde: BVH generique (broad-phase spatial) pour les requetes rayon "any-hit" et de recouvrement AABB.
+- xlib3d_BoxIntersection.pde: calcul des aretes de couture entre boites qui se recouvrent.
+- xlib3d_Camera3D.pde / xlib3d_CameraData.pde: projection camera + UI + deprojection ecran->monde.
 
 Objets de travail:
 - meshList: cache des Mesh.

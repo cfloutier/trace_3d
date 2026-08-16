@@ -17,7 +17,7 @@ class LineBuilder implements BVH3DRayTest
   BVH3D bvh = new BVH3D();
   float orthoRayTMax = 1000;
 
-  // World-space seam edges between overlapping boxes (see xLib_BoxIntersection) - purely
+  // World-space seam edges between overlapping boxes (see xlib3d_BoxIntersection) - purely
   // geometric, so cached and only recomputed alongside occluders (indexedMeshListVersion),
   // then reprojected into `edges` every rebuild like any other edge.
   ArrayList<SeamWorldEdge> seamEdges = new ArrayList<SeamWorldEdge>();

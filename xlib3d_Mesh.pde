@@ -6,7 +6,7 @@ class EdgeProjected
   PVector worldB;
   int ownerOccluderIndex;
   // -1 for a normal box edge (single owner). Set to a second occluder index for a seam
-  // edge shared by two intersecting boxes (see xLib_BoxIntersection) - such an edge sits
+  // edge shared by two intersecting boxes (see xlib3d_BoxIntersection) - such an edge sits
   // exactly on both boxes' surfaces, so both must get the lenient self-occlusion check.
   int ownerOccluderIndexB;
 
