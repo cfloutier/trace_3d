@@ -19,8 +19,8 @@ class Box3D extends Mesh
   // perpendicular in-plane basis) - used by xlib3d_BoxIntersection to find seam edges
   // where two boxes' surfaces cross.
   final int[][] FACE_IDX = {
-    { 0, 1, 2, 3 }, // -Y (bottom)
-    { 4, 5, 6, 7 }, // +Y (top)
+    { 0, 1, 2, 3 }, // Y = center_y (screen-up face; see getVertices())
+    { 4, 5, 6, 7 }, // Y = center_y - size_y (screen-down face)
     { 0, 1, 5, 4 }, // -Z
     { 3, 2, 6, 7 }, // +Z
     { 0, 4, 7, 3 }, // -X
@@ -69,17 +69,21 @@ class Box3D extends Mesh
     float max_x = center_x + size_x;
     float min_z = center_z - size_z;
     float max_z = center_z + size_z;
-    float top_y = center_y + size_y;
+    // World +Y renders toward the bottom of the screen in this project's projection (nothing
+    // re-flips it to match Processing's screen-Y-down convention), so a box's "size_y" extent
+    // has to grow toward -Y to read as growing upward on screen. center_y is the base of the
+    // box (its screen-up face), not its true center - size_y extends from there down in Y.
+    float far_y = center_y - size_y;
 
     vertices[0] = new PVector(min_x, center_y, min_z);
     vertices[1] = new PVector(max_x, center_y, min_z);
     vertices[2] = new PVector(max_x, center_y, max_z);
     vertices[3] = new PVector(min_x, center_y, max_z);
 
-    vertices[4] = new PVector(min_x, top_y, min_z);
-    vertices[5] = new PVector(max_x, top_y, min_z);
-    vertices[6] = new PVector(max_x, top_y, max_z);
-    vertices[7] = new PVector(min_x, top_y, max_z);
+    vertices[4] = new PVector(min_x, far_y, min_z);
+    vertices[5] = new PVector(max_x, far_y, min_z);
+    vertices[6] = new PVector(max_x, far_y, max_z);
+    vertices[7] = new PVector(min_x, far_y, max_z);
 
     for (int i = 0; i < vertices.length; i++)
       vertices[i] = rotateAroundBaseCenter(vertices[i]);
@@ -168,11 +172,12 @@ class Box3D extends Mesh
     }
   }
 
-  // World-space geometric center of the box volume (base pivot + half-height on Y, rotated).
-  // Note: center_x/y/z is a BASE pivot (Y in [0, size_y]), not the volume's geometric center.
+  // World-space geometric center of the box volume (base pivot - half-height on Y, rotated).
+  // Note: center_x/y/z is a BASE pivot (Y in [-size_y, 0] relative to it, see getVertices()),
+  // not the volume's geometric center.
   PVector getWorldGeometricCenter()
   {
-    PVector offset = new PVector(0, size_y * 0.5, 0);
+    PVector offset = new PVector(0, -size_y * 0.5, 0);
     if (rotation.x != 0) offset = rotateXPoint(offset, rotation.x);
     if (rotation.y != 0) offset = rotateYPoint(offset, rotation.y);
     if (rotation.z != 0) offset = rotateZPoint(offset, rotation.z);
@@ -204,7 +209,7 @@ class Box3D extends Mesh
 
   // Transforms a world-space point (isDirection=false) or vector (isDirection=true, no translation)
   // into the box's unrotated local frame, where the box occupies x in [-size_x,size_x],
-  // y in [0,size_y], z in [-size_z,size_z]. This is the exact inverse of rotateAroundBaseCenter,
+  // y in [-size_y,0], z in [-size_z,size_z]. This is the exact inverse of rotateAroundBaseCenter,
   // which applies Rx then Ry then Rz: the inverse applies Rz(-z) then Ry(-y) then Rx(-x).
   PVector worldToLocal(PVector world, boolean isDirection)
   {
@@ -233,8 +238,8 @@ class Box3D extends Mesh
 
     float[] o = { lo.x, lo.y, lo.z };
     float[] d = { ld.x, ld.y, ld.z };
-    float[] mn = { -size_x, 0, -size_z };
-    float[] mx = { size_x, size_y, size_z };
+    float[] mn = { -size_x, -size_y, -size_z };
+    float[] mx = { size_x, 0, size_z };
 
     for (int axis = 0; axis < 3; axis++)
     {

@@ -156,6 +156,25 @@ class CameraData extends GenericData implements CameraProjector3D
     markChanged();
   }
 
+  // Free-look: changes yaw/pitch (look direction) while keeping the camera's world position
+  // fixed, instead of orbiting the camera around a fixed target. Since camera position is
+  // derived from target + target_distance * direction(yaw,pitch), holding the camera position
+  // fixed means the target has to move to wherever that same distance/new-direction now lands.
+  void lookAroundKeepingPosition(float dYaw, float dPitch)
+  {
+    PVector camera_pos = getCameraPosition();
+
+    yaw = wrapAngle(yaw + dYaw);
+    pitch = constrain(pitch + dPitch, -HALF_PI + 0.001, HALF_PI - 0.001);
+
+    float cosPitch = cos(pitch);
+    target_x = camera_pos.x - target_distance * cosPitch * sin(yaw);
+    target_y = camera_pos.y - target_distance * sin(pitch);
+    target_z = camera_pos.z - target_distance * cosPitch * cos(yaw);
+
+    markChanged();
+  }
+
   void centerTarget()
   {
     target_x = 0;

@@ -10,18 +10,19 @@ class GridDistributionData extends MeshDistributionData
   float spacing     = 90;
   float box_size    = 32;
   float box_height  = 120;
+  float random_h    = 0;
 
   @Override
     void createMeshes(ArrayList<Mesh> out_meshes, int random_seed)
   {
     out_meshes.clear();
+    randomSeed(random_seed);
 
     int columns = max(1, count_x);
     int rows    = max(1, count_z);
 
     float size_x = box_size;
     float size_z = box_size;
-    float size_y = box_height;
 
     float half_width = (columns - 1) * spacing * 0.5;
     float half_depth = (rows - 1) * spacing * 0.5;
@@ -33,6 +34,7 @@ class GridDistributionData extends MeshDistributionData
       {
         float center_x = col * spacing - half_width;
         float center_z = row * spacing - half_depth;
+        float size_y = box_height + random(0, random_h);
 
         out_meshes.add(new Box3D(center_x, base_center_y, center_z, size_x, size_y, size_z));
       }
@@ -50,6 +52,7 @@ class GridDistributionGUI
   Slider spacing;
   Slider box_size;
   Slider box_height;
+  Slider random_h;
 
   GridDistributionGUI(GridDistributionData data)
   {
@@ -74,6 +77,8 @@ class GridDistributionGUI
 
     box_height = panel.addSlider("box_height", "Height", data, 10, 1000);
     controls.add(box_height);
+    random_h = panel.addSlider("random_h", "Random H", data, 0, 1000);
+    controls.add(random_h);
   }
 
   void setGUIValues()

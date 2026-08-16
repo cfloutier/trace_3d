@@ -43,7 +43,10 @@ class DataGUI extends MainPanel
       float dx = mouseX - pmouseX;
       float dy = mouseY - pmouseY;
 
-      if (mouseButton == RIGHT)
+      if (mouseButton == RIGHT && keyPressed && keyCode == SHIFT)
+      {
+        data.camera.lookAroundKeepingPosition(-dx * 0.01, -dy * 0.01);
+      } else if (mouseButton == RIGHT)
       {
         data.camera.panTargetByScreenDelta(dx, dy, data.page.global_scale);
       } else
