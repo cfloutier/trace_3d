@@ -7,7 +7,6 @@ class TubeDistributionData extends MeshDistributionData
 
   int   box_count = 24;
   int   box_multiplier = 1;
-  int   levels = 8;
   float radius_min = 300;
   float radius_max = 600;
   float base_y_min = -300;

@@ -66,7 +66,6 @@ class BoxesGUI extends GUIPanel
 {
   DataBoxes boxes;
   myRadioButton distribution_mode;
-  Slider random_seed;
 
   GridDistributionGUI grid_ui;
   TubeDistributionGUI tube_ui;
@@ -95,8 +94,7 @@ class BoxesGUI extends GUIPanel
     distribution_modes.add("Grid");
     distribution_modes.add("Tube");
 
-    // random_seed = addIntSlider("random_seed", "Random Seed", boxes, 0, 1000000);
-    addButton("Front").plugTo(this, "setSeed");
+    addButton("Seed").plugTo(this, "setSeed");
 
     distribution_mode = addRadio("distribution_mode", distribution_modes);
 

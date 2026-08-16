@@ -5,36 +5,37 @@ class GridDistributionData extends MeshDistributionData
     super("Grid");
   }
 
-  int   count      = 16;
-  float spacing    = 90;
-  float box_height = 120;
+  int   count_x     = 4;
+  int   count_z     = 4;
+  float spacing     = 90;
+  float box_size    = 32;
+  float box_height  = 120;
 
   @Override
     void createMeshes(ArrayList<Mesh> out_meshes, int random_seed)
   {
     out_meshes.clear();
 
-    int total_boxes = max(1, count);
-    int columns = max(1, (int)ceil(sqrt((float)total_boxes)));
-    int rows = max(1, (int)ceil((float)total_boxes / columns));
+    int columns = max(1, count_x);
+    int rows    = max(1, count_z);
 
-    float size_x = spacing * 0.35;
-    float size_z = spacing * 0.35;
-    float half_depth = (rows - 1) * spacing * 0.5;
-    float base_center_y = 0;
+    float size_x = box_size;
+    float size_z = box_size;
     float size_y = box_height;
 
-    for (int index = 0; index < total_boxes; index++)
+    float half_width = (columns - 1) * spacing * 0.5;
+    float half_depth = (rows - 1) * spacing * 0.5;
+    float base_center_y = 0;
+
+    for (int row = 0; row < rows; row++)
     {
-      int col = index % columns;
-      int row = index / columns;
-      int boxes_in_row = min(columns, total_boxes - row * columns);
+      for (int col = 0; col < columns; col++)
+      {
+        float center_x = col * spacing - half_width;
+        float center_z = row * spacing - half_depth;
 
-      float row_half_width = (boxes_in_row - 1) * spacing * 0.5;
-      float center_x = col * spacing - row_half_width;
-      float center_z = row * spacing - half_depth;
-
-      out_meshes.add(new Box3D(center_x, base_center_y, center_z, size_x, size_y, size_z));
+        out_meshes.add(new Box3D(center_x, base_center_y, center_z, size_x, size_y, size_z));
+      }
     }
   }
 }
@@ -44,8 +45,10 @@ class GridDistributionGUI
   GridDistributionData data;
   ControlsGroup controls;
 
-  Slider count;
+  Slider count_x;
+  Slider count_z;
   Slider spacing;
+  Slider box_size;
   Slider box_height;
 
   GridDistributionGUI(GridDistributionData data)
@@ -57,12 +60,18 @@ class GridDistributionGUI
   {
     controls = new ControlsGroup(data);
 
+    count_x = panel.addIntSlider("count_x", "Count X", data, 1, 64);
+    controls.add(count_x);
+    count_z = panel.addIntSlider("count_z", "Count Z", data, 1, 64);
+    controls.add(count_z);
+    panel.nextLine();
 
-    count = panel.addIntSlider("count", "Count", data, 1, 4000);
-    controls.add(count);
     spacing = panel.addSlider("spacing", "Spacing", data, 10, 400);
     controls.add(spacing);
+    box_size = panel.addSlider("box_size", "Box Size", data, 2, 200);
+    controls.add(box_size);
     panel.nextLine();
+
     box_height = panel.addSlider("box_height", "Height", data, 10, 1000);
     controls.add(box_height);
   }

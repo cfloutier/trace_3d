@@ -2,53 +2,54 @@
   "Occlusion": {
     "sample_step_px": 1.25,
     "self_occlusion_eps_scale": 1.0000000474974513E-4,
-    "seam_edges_enabled": true,
+    "seam_edges_enabled": false,
     "bisection_iterations": 10,
     "enabled": true
   },
   "Style": {
     "backgroundColor": -16777216,
     "lineColor": -1,
-    "lineWidth": 1.899999976158142
+    "lineWidth": 1.0833333730697632
   },
   "Page": {
     "clipping": true,
-    "clip_width": 1186.666748046875,
-    "margin": 2,
-    "clip_height": 793.3333740234375,
-    "paper_format": 2,
-    "global_scale": 0.8667557835578918
+    "clip_width": 800,
+    "margin": 0,
+    "clip_height": 600,
+    "paper_format": 1,
+    "global_scale": 1
   },
   "Camera": {
-    "target_x": -122.61520385742188,
-    "target_distance": 4631.93359375,
-    "target_y": 3309.114990234375,
-    "target_z": 65.90496063232422,
-    "projection_mode": 1,
-    "ortho_zoom": 1,
-    "pitch": -1.5657963752746582,
-    "fov": 61.56666946411133,
-    "yaw": 2.3699991703033447
+    "target_x": -140.12875366210938,
+    "target_distance": 2179.780029296875,
+    "target_y": 76.17019653320312,
+    "target_z": -111.14584350585938,
+    "projection_mode": 0,
+    "ortho_zoom": 0.3160000145435333,
+    "pitch": -0.6857965588569641,
+    "fov": 55.333335876464844,
+    "yaw": 1.2799994945526123
   },
   "Boxes": {
-    "random_seed": 1025496570,
+    "random_seed": 160000,
     "Tube": {
-      "box_size": 39.900001525878906,
-      "base_y_min": -2000,
-      "box_multiplier": 5,
-      "radius_max": 665.7000122070312,
-      "base_y_max": 2000,
-      "radius_min": 1022.5999755859375,
+      "base_y_min": -1240,
+      "box_multiplier": 1,
+      "box_size": 43.79999923706055,
+      "radius_max": 600,
+      "base_y_max": 920,
+      "radius_min": 1412.699951171875,
       "box_length_max": 1509.13330078125,
-      "levels": 8,
-      "box_count": 137,
-      "box_length_min": 686.6000366210938
+      "box_count": 108,
+      "box_length_min": 2000
     },
     "Grid": {
-      "spacing": 90,
-      "box_height": 120,
-      "count": 400
+      "spacing": 364.9000244140625,
+      "box_height": 1000,
+      "box_size": 32,
+      "count_z": 4,
+      "count_x": 4
     },
-    "distribution_mode": 1
+    "distribution_mode": 0
   }
 }
