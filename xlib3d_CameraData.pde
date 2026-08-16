@@ -156,6 +156,14 @@ class CameraData extends GenericData implements CameraProjector3D
     markChanged();
   }
 
+  void centerTarget()
+  {
+    target_x = 0;
+    target_y = 0;
+    target_z = 0;
+    markChanged();
+  }
+
   void setOrthoZoom(float newZoom)
   {
     ortho_zoom = constrain(newZoom, ORTHO_ZOOM_MIN, ORTHO_ZOOM_MAX);

@@ -28,13 +28,15 @@ class CameraGUI extends GUIPanel
     addButton("Right").plugTo(this, "lookRight");
     addButton("Iso").plugTo(this, "lookIso");
     addButton("Top").plugTo(this, "lookTop");
+    xPos += 20;
+    addButton("Center").plugTo(this, "centerTarget");
     nextLine();
 
     yaw = addSlider("yaw", "Yaw", -PI, PI);
     pitch = addSlider("pitch", "Pitch", -HALF_PI + 0.005, HALF_PI - 0.005);
     target_distance = addSlider("target_distance", "Distance", CameraData.TARGET_DISTANCE_MIN, CameraData.TARGET_DISTANCE_MAX);
     nextLine();
-    
+
     ArrayList<String> projection_modes = new ArrayList<String>();
     projection_modes.add("Ortho");
     projection_modes.add("Perspective");
@@ -43,7 +45,7 @@ class CameraGUI extends GUIPanel
     fov = addSlider("fov", "FOV", 10, 180);
     xPos = start_pos;
     ortho_zoom = addSlider("ortho_zoom", "Ortho Zoom", CameraData.ORTHO_ZOOM_MIN, CameraData.ORTHO_ZOOM_MAX);
-}
+  }
 
   void setGUIValues()
   {
@@ -64,20 +66,41 @@ class CameraGUI extends GUIPanel
     {
       fov.hide();
       ortho_zoom.show();
-    }
-    else
+    } else
     {
       fov.show();
       ortho_zoom.hide();
     }
   }
 
-  void lookFront()  { camera.lookFront(); setGUIValues(); }
-  void lookBack()   { camera.lookBack(); setGUIValues(); }
-  void lookLeft()   { camera.lookLeft(); setGUIValues(); }
-  void lookRight()  { camera.lookRight(); setGUIValues(); }
-  void lookIso()    { camera.lookIso(); setGUIValues(); }
-  void lookTop()    { camera.lookTop(); setGUIValues(); }
+  void lookFront() {
+    camera.lookFront();
+    setGUIValues();
+  }
+  void lookBack() {
+    camera.lookBack();
+    setGUIValues();
+  }
+  void lookLeft() {
+    camera.lookLeft();
+    setGUIValues();
+  }
+  void lookRight() {
+    camera.lookRight();
+    setGUIValues();
+  }
+  void lookIso() {
+    camera.lookIso();
+    setGUIValues();
+  }
+  void lookTop() {
+    camera.lookTop();
+    setGUIValues();
+  }
+  void centerTarget() {
+    camera.centerTarget();
+    setGUIValues();
+  }
 
   void update_ui()
   {
@@ -167,11 +190,18 @@ boolean clipSegmentToNearPlane(
     PVector clippedWorld = PVector.lerp(worldA, worldB, t);
     ProjectedPoint clippedProjected = camera.projectPointWithDepth(clippedWorld, frame);
 
-    if (nearA) { finalWA = clippedWorld; finalPA = clippedProjected; }
-    else       { finalWB = clippedWorld; finalPB = clippedProjected; }
+    if (nearA) {
+      finalWA = clippedWorld;
+      finalPA = clippedProjected;
+    } else {
+      finalWB = clippedWorld;
+      finalPB = clippedProjected;
+    }
   }
 
-  outWorld[0] = finalWA; outWorld[1] = finalWB;
-  outProjected[0] = finalPA; outProjected[1] = finalPB;
+  outWorld[0] = finalWA;
+  outWorld[1] = finalWB;
+  outProjected[0] = finalPA;
+  outProjected[1] = finalPB;
   return true;
 }
