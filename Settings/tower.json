@@ -15,8 +15,8 @@
     "clipping": true,
     "clip_width": 800,
     "margin": 0,
-    "clip_height": 600,
-    "paper_format": 1,
+    "clip_height": 1020,
+    "paper_format": 2,
     "global_scale": 1
   },
   "Camera": {
@@ -26,12 +26,12 @@
     "target_z": 359.4977111816406,
     "projection_mode": 1,
     "ortho_zoom": 0.25085097551345825,
-    "pitch": 0.6142034530639648,
+    "pitch": 0.604203462600708,
     "fov": 88.20000457763672,
     "yaw": 0.6268157958984375
   },
   "Boxes": {
-    "random_seed": -332555205,
+    "random_seed": -547821641,
     "Tube": {
       "base_y_min": -1240,
       "box_multiplier": 1,
@@ -44,11 +44,11 @@
       "box_length_min": 2000
     },
     "Grid": {
-      "random_size": 0,
+      "random_size": 22.666667938232422,
       "random_h": 10000,
       "spacing": 88,
       "box_height": 541.300048828125,
-      "box_size": 31.040000915527344,
+      "box_size": 27.079999923706055,
       "perlin_zoom": 0.15000000596046448,
       "distance_bias": -1,
       "count_z": 19,
