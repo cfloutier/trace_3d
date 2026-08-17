@@ -106,15 +106,20 @@ Fonctionnement (2e passe, apres l occlusion normale):
    aretes bordantes ont ete memorisees ainsi (un simple effleurement d arete ne
    suffit pas).
 3. Pour chaque face visible et appartenant a un groupe active (cotes / dessus /
-   dessous), des lignes verticales sont generees (position aleatoire le long de
-   l axe horizontal de la face, pleine hauteur le long de l axe vertical propre a
-   la face - pas la verticale ecran), puis passees par le meme ray-casting de
-   visibilite que les aretes normales.
+   dessous), des lignes verticales sont generees a une position aleatoire sur la
+   surface de la face (aleatoire le long de l axe horizontal de la face ET le long
+   de son axe vertical propre - pas la verticale ecran), avec une longueur
+   aleatoire (line_length_min + valeur aleatoire dans [0, line_length_random],
+   bornee pour ne jamais depasser la hauteur de la face), puis passees par le meme
+   ray-casting de visibilite que les aretes normales.
 
 Parametres:
 - enabled: active/desactive le motif.
 - lines_per_face: nombre de lignes generees par face visible (peut monter haut,
   ex. 200-300, selon la densite voulue).
+- line_length_min: longueur minimale d une ligne.
+- line_length_random: longueur aleatoire additionnelle (0 a cette valeur), ajoutee
+  a line_length_min.
 - apply_sides / apply_top / apply_bottom: groupes de faces concernes (cotes actif
   par defaut; dessus/dessous off par defaut).
 - seed: graine dediee au motif, independante de random_seed (Meshes) - permet de

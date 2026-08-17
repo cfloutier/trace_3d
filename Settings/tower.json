@@ -6,6 +6,16 @@
     "bisection_iterations": 10,
     "enabled": true
   },
+  "FacePattern": {
+    "line_length_random": 140,
+    "lines_per_face": 44,
+    "seed": 1066063869,
+    "line_length_min": 46.66666793823242,
+    "apply_bottom": false,
+    "apply_sides": true,
+    "apply_top": false,
+    "enabled": true
+  },
   "Style": {
     "backgroundColor": -16777216,
     "lineColor": -1,
@@ -20,15 +30,15 @@
     "global_scale": 1
   },
   "Camera": {
-    "target_x": 399.630126953125,
-    "target_distance": 1483.5228271484375,
-    "target_y": -2321.71240234375,
-    "target_z": 359.4977111816406,
+    "target_x": -430.6811218261719,
+    "target_distance": 3202.816162109375,
+    "target_y": -3208.76611328125,
+    "target_z": -801.3497924804688,
     "projection_mode": 1,
     "ortho_zoom": 0.25085097551345825,
-    "pitch": 0.604203462600708,
+    "pitch": 0.7442035675048828,
     "fov": 88.20000457763672,
-    "yaw": 0.6268157958984375
+    "yaw": 0.6168158650398254
   },
   "Boxes": {
     "random_seed": -547821641,
@@ -51,7 +61,9 @@
       "box_size": 27.079999923706055,
       "perlin_zoom": 0.15000000596046448,
       "distance_bias": -1,
+      "rotation_y": 0,
       "count_z": 19,
+      "random_rotation_y": 96.60000610351562,
       "height_mode": 3,
       "count_x": 18
     },
