@@ -19,13 +19,39 @@ class Box3D extends Mesh
   // perpendicular in-plane basis) - used by xlib3d_BoxIntersection to find seam edges
   // where two boxes' surfaces cross.
   final int[][] FACE_IDX = {
-    { 0, 1, 2, 3 }, // Y = center_y (screen-up face; see getVertices())
-    { 4, 5, 6, 7 }, // Y = center_y - size_y (screen-down face)
+    { 0, 1, 2, 3 }, // Y = center_y (the box's base/ground face - screen-down; see getVertices())
+    { 4, 5, 6, 7 }, // Y = center_y - size_y (the far/tall end - screen-up)
     { 0, 1, 5, 4 }, // -Z
     { 3, 2, 6, 7 }, // +Z
     { 0, 4, 7, 3 }, // -X
     { 1, 2, 6, 5 }  // +X
   };
+
+  // Which 2 faces (FACE_IDX index) each edge (EDGE_IDX index) borders. Used to turn
+  // "this edge had a visible segment" into "this face is (partly) visible" for the face
+  // pattern feature.
+  final int[][] EDGE_TO_FACES = {
+    { 0, 2 }, { 0, 5 }, { 0, 3 }, { 0, 4 },
+    { 1, 2 }, { 1, 5 }, { 1, 3 }, { 1, 4 },
+    { 2, 4 }, { 2, 5 }, { 3, 5 }, { 3, 4 }
+  };
+
+  // Inverse of EDGE_TO_FACES: the 4 edges bordering each face.
+  final int[][] FACE_TO_EDGES = {
+    { 0, 1, 2, 3 },   // face 0 (top)
+    { 4, 5, 6, 7 },   // face 1 (bottom)
+    { 0, 4, 8, 9 },   // face 2 (-Z)
+    { 2, 6, 10, 11 }, // face 3 (+Z)
+    { 3, 7, 8, 11 },  // face 4 (-X)
+    { 1, 5, 9, 10 }   // face 5 (+X)
+  };
+
+  // true = 'v' (FACE_IDX[f][3]-FACE_IDX[f][0]) is the face's local "vertical" (height)
+  // axis; false = 'u' (FACE_IDX[f][1]-FACE_IDX[f][0]) is. Face 4 (-X) has the opposite
+  // winding from the other 3 side faces. Faces 0/1 (top/bottom) have no true vertical
+  // axis - 'u' is used there by convention (only relevant if those faces are enabled
+  // for face-pattern lines).
+  final boolean[] FACE_VERTICAL_IS_V = { false, false, true, true, false, true };
 
   float center_x;
   float center_y;
@@ -168,7 +194,7 @@ class Box3D extends Mesh
       edges.add(new EdgeProjected(
         outProjected[0], outProjected[1],
         outWorld[0], outWorld[1],
-        ownerOccluderIndex));
+        ownerOccluderIndex, -1, i));
     }
   }
 

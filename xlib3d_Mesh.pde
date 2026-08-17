@@ -9,13 +9,22 @@ class EdgeProjected
   // edge shared by two intersecting boxes (see xlib3d_BoxIntersection) - such an edge sits
   // exactly on both boxes' surfaces, so both must get the lenient self-occlusion check.
   int ownerOccluderIndexB;
+  // Local EDGE_IDX index (0-11) on the owning box this edge came from. -1 for anything
+  // that isn't a canonical box edge (seam edges, face-pattern lines) - emitRun() uses
+  // this to know which edges may contribute to face-visibility bookkeeping.
+  int ownerEdgeIndex;
 
   EdgeProjected(ProjectedPoint a, ProjectedPoint b, PVector worldA, PVector worldB, int ownerOccluderIndex)
   {
-    this(a, b, worldA, worldB, ownerOccluderIndex, -1);
+    this(a, b, worldA, worldB, ownerOccluderIndex, -1, -1);
   }
 
   EdgeProjected(ProjectedPoint a, ProjectedPoint b, PVector worldA, PVector worldB, int ownerOccluderIndex, int ownerOccluderIndexB)
+  {
+    this(a, b, worldA, worldB, ownerOccluderIndex, ownerOccluderIndexB, -1);
+  }
+
+  EdgeProjected(ProjectedPoint a, ProjectedPoint b, PVector worldA, PVector worldB, int ownerOccluderIndex, int ownerOccluderIndexB, int ownerEdgeIndex)
   {
     this.a = a;
     this.b = b;
@@ -23,6 +32,7 @@ class EdgeProjected
     this.worldB = worldB;
     this.ownerOccluderIndex = ownerOccluderIndex;
     this.ownerOccluderIndexB = ownerOccluderIndexB;
+    this.ownerEdgeIndex = ownerEdgeIndex;
   }
 }
 

@@ -6,7 +6,9 @@
       "Bash(git ls-tree *)",
       "Bash(git switch *)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(where processing-java *)",
+      "Bash(where processing-java.exe)"
     ]
   }
 }

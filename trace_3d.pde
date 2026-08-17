@@ -62,6 +62,7 @@ void draw()
   boolean boxes_changed = data.boxes.changed;
   boolean camera_changed = data.camera.changed;
   boolean occlusion_changed = data.occlusion.changed;
+  boolean facepattern_changed = data.facepattern.changed;
   boolean page_changed   = data.page.changed;
 
   // if (occlusion_changed)
@@ -78,9 +79,13 @@ void draw()
   // stop_compute is set around Save/Save As/Load (see xLib_FileUI.pde) precisely to keep
   // a save/load cycle from kicking off an unwanted rebuild (previously declared but never
   // actually read anywhere).
-  if (!stop_compute && (boxes_changed || camera_changed || occlusion_changed))
+  if (!stop_compute)
   {
-    lineBuilder.requestBuild(meshList, lineGroup);
+    if (boxes_changed || camera_changed || occlusion_changed)
+      lineBuilder.requestBuild(meshList, lineGroup);
+    else if (facepattern_changed)
+      lineBuilder.requestPatternOnlyRebuild();
+
     if (!lineBuilder.isBusy())
       hud_last_lines_gen_ms = lineBuilder.getElapsedMs();
   }
@@ -88,7 +93,7 @@ void draw()
   if (lineBuilder.update(0.2f))
     hud_last_lines_gen_ms = lineBuilder.getElapsedMs();
 
-  if (boxes_changed || camera_changed || occlusion_changed || page_changed)
+  if (boxes_changed || camera_changed || occlusion_changed || facepattern_changed || page_changed)
     file_ui.updateExportScale(lineBuilder.getDisplayBoundingBox(data.page.clipping, data.page.clip_width, data.page.clip_height));
 
   dataGui.update_ui();

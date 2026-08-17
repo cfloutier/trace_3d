@@ -3,6 +3,8 @@ class LineBuilder implements BVH3DRayTest
   static final int STAGE_IDLE = 0;
   static final int STAGE_COLLECT = 1;
   static final int STAGE_EMIT = 2;
+  static final int STAGE_PATTERN_COLLECT = 3;
+  static final int STAGE_PATTERN_EMIT = 4;
 
   // Numeric floor for BVH ray queries: avoids picking up a hit at literally t=0
   // (the biased sample origin itself) regardless of which box owns/doesn't own the edge.
@@ -12,10 +14,31 @@ class LineBuilder implements BVH3DRayTest
 
   ArrayList<Mesh> sourceMeshes = null;
   PolylineGroup finalGroup = null;
+  // First-pass result (box edges + seams) and second-pass result (face-pattern lines),
+  // kept separate so a pattern-only param change can recompute patternGroup alone and
+  // reuse edgeGroup untouched (see requestPatternOnlyRebuild). finalGroup (external) is
+  // the merge of the two, rebuilt via mergeIntoFinalGroup() whenever either changes.
+  PolylineGroup edgeGroup = new PolylineGroup();
+  PolylineGroup patternGroup = new PolylineGroup();
   ArrayList<EdgeProjected> edges = new ArrayList<EdgeProjected>();
   ArrayList<OccluderBox> occluders = new ArrayList<OccluderBox>();
   BVH3D bvh = new BVH3D();
   float orthoRayTMax = 1000;
+
+  // Face-pattern state: which edges/faces of each box actually showed a visible segment
+  // during the first (STAGE_EMIT) pass. edgeHasVisibleSegment is sized [occluders][12]
+  // and reset every full rebuild (STAGE_COLLECT); faceVisible is derived from it once
+  // STAGE_EMIT completes and consumed by beginPatternCollect().
+  boolean[][] edgeHasVisibleSegment = new boolean[0][0];
+  boolean[][] faceVisible = new boolean[0][0];
+  // True once a first pass has completed and edgeGroup/faceVisible are valid to reuse -
+  // lets requestPatternOnlyRebuild() skip straight to the pattern stages.
+  boolean firstPassValid = false;
+
+  ArrayList<EdgeProjected> patternEdges = new ArrayList<EdgeProjected>();
+  int patternEdgeIndex = 0;
+  ArrayList<int[]> patternFaceQueue = new ArrayList<int[]>(); // {boxIndex, faceIndex}
+  int patternFaceQueueIndex = 0;
 
   // World-space seam edges between overlapping boxes (see xlib3d_BoxIntersection) - purely
   // geometric, so cached and only recomputed alongside occluders (indexedMeshListVersion),
@@ -67,9 +90,39 @@ class LineBuilder implements BVH3DRayTest
     }
 
     stopBuild();
+    edgeGroup.clear();
+    patternGroup.clear();
+    firstPassValid = false;
     finalGroup.clear();
     for (int i = 0; i < sourceMeshes.size(); i++)
       sourceMeshes.get(i).addWireframe(finalGroup, data.camera);
+  }
+
+  // Skips the (expensive) edge/occlusion first pass and jumps straight to regenerating
+  // pattern lines, reusing the cached occluders/BVH/frame/faceVisible from the last full
+  // build - valid as long as nothing that would invalidate them (boxes/camera/occlusion)
+  // has changed since. Falls back to a full rebuild if no such cache exists yet.
+  void requestPatternOnlyRebuild()
+  {
+    if (!firstPassValid)
+    {
+      requestBuild(sourceMeshes, finalGroup);
+      return;
+    }
+
+    if (!facePatternActive())
+    {
+      patternGroup.clear();
+      mergeIntoFinalGroup();
+      return;
+    }
+
+    busy = true;
+    occlusionMode = true;
+    patternGroup.clear();
+    beginPatternCollect();
+    stage = STAGE_PATTERN_COLLECT;
+    patternEdgeIndex = 0;
   }
 
   void beginOcclusionBuild()
@@ -80,6 +133,11 @@ class LineBuilder implements BVH3DRayTest
     meshIndex = 0;
     edgeIndex = 0;
     edges.clear();
+    // Old pattern lines are stale the moment a full rebuild starts (different camera
+    // angle or box layout) - clear immediately rather than waiting for
+    // STAGE_PATTERN_COLLECT, otherwise they'd keep showing live throughout STAGE_EMIT.
+    patternGroup.clear();
+    firstPassValid = false;
     frame = data.camera.buildFrame();
 
     int currentMeshCount = (sourceMeshes == null) ? 0 : sourceMeshes.size();
@@ -114,8 +172,9 @@ class LineBuilder implements BVH3DRayTest
 
           prepareEmit(rebuildingOccluders);
           projectSeamEdges();
+          edgeHasVisibleSegment = new boolean[occluders.size()][12];
           stage = STAGE_EMIT;
-          finalGroup.clear();
+          edgeGroup.clear();
           edgeIndex = 0;
           continue;
         }
@@ -130,13 +189,55 @@ class LineBuilder implements BVH3DRayTest
       {
         if (edgeIndex >= edges.size())
         {
+          computeFaceVisibility();
+          firstPassValid = true;
+
+          if (facePatternActive())
+          {
+            patternGroup.clear();
+            beginPatternCollect();
+            stage = STAGE_PATTERN_COLLECT;
+            continue;
+          }
+
+          patternGroup.clear();
+          mergeIntoFinalGroup();
           stopBuild();
           if (millis() - last_occlusion_debug_ms > 250)
             last_occlusion_debug_ms = millis();
           return true;
         }
 
-        edgeIndex = emitVisibleEdgeSegmentsRange(edgeIndex, deadlineNs, finalGroup);
+        edgeIndex = emitVisibleEdgeSegmentsRange(edges, edgeIndex, deadlineNs, edgeGroup);
+      }
+      else if (stage == STAGE_PATTERN_COLLECT)
+      {
+        if (patternFaceQueueIndex >= patternFaceQueue.size())
+        {
+          patternEdgeIndex = 0;
+          stage = STAGE_PATTERN_EMIT;
+          continue;
+        }
+
+        while (patternFaceQueueIndex < patternFaceQueue.size() && System.nanoTime() < deadlineNs)
+        {
+          int[] pair = patternFaceQueue.get(patternFaceQueueIndex);
+          appendFacePatternEdges(pair[0], pair[1]);
+          patternFaceQueueIndex++;
+        }
+      }
+      else if (stage == STAGE_PATTERN_EMIT)
+      {
+        if (patternEdgeIndex >= patternEdges.size())
+        {
+          mergeIntoFinalGroup();
+          stopBuild();
+          if (millis() - last_occlusion_debug_ms > 250)
+            last_occlusion_debug_ms = millis();
+          return true;
+        }
+
+        patternEdgeIndex = emitVisibleEdgeSegmentsRange(patternEdges, patternEdgeIndex, deadlineNs, patternGroup);
       }
       else
       {
@@ -278,17 +379,17 @@ class LineBuilder implements BVH3DRayTest
     }
   }
 
-  int emitVisibleEdgeSegmentsRange(int startIndex, long deadlineNs, PolylineGroup outGroup)
+  int emitVisibleEdgeSegmentsRange(ArrayList<EdgeProjected> srcEdges, int startIndex, long deadlineNs, PolylineGroup outGroup)
   {
     float stepPx = max(0.25, data.occlusion.sample_step_px);
     int bisectIters = (int)constrain(data.occlusion.bisection_iterations, 1, 32);
 
-    for (int i = startIndex; i < edges.size(); i++)
+    for (int i = startIndex; i < srcEdges.size(); i++)
     {
       if (System.nanoTime() >= deadlineNs)
         return i;
 
-      EdgeProjected e = edges.get(i);
+      EdgeProjected e = srcEdges.get(i);
       if (e.a.z <= 0 || e.b.z <= 0)
         continue;
 
@@ -345,7 +446,7 @@ class LineBuilder implements BVH3DRayTest
         emitRun(e, runStartT, 1.0, outGroup);
     }
 
-    return edges.size();
+    return srcEdges.size();
   }
 
   boolean isSampleVisibleAtT(EdgeProjected e, float t)
@@ -411,6 +512,99 @@ class LineBuilder implements BVH3DRayTest
     line.addPoint(new PVector(x0, y0));
     line.addPoint(new PVector(x1, y1));
     outGroup.add(line);
+
+    // Only ever true for a genuine box edge (see Box3D.appendProjectedEdges) - seam
+    // edges and face-pattern lines always carry ownerEdgeIndex == -1, so this never
+    // fires for them.
+    if (e.ownerEdgeIndex >= 0)
+      edgeHasVisibleSegment[e.ownerOccluderIndex][e.ownerEdgeIndex] = true;
+  }
+
+  // ---- Face pattern (2nd pass) ----
+
+  boolean facePatternActive()
+  {
+    return data.facepattern.enabled &&
+      (data.facepattern.apply_sides || data.facepattern.apply_top || data.facepattern.apply_bottom);
+  }
+
+  // Derives faceVisible[box][face] from edgeHasVisibleSegment: a face counts as visible
+  // only once at least 2 of its 4 bordering edges showed a visible segment (a single
+  // grazing edge isn't enough - see plan discussion).
+  void computeFaceVisibility()
+  {
+    int n = occluders.size();
+    faceVisible = new boolean[n][6];
+
+    for (int b = 0; b < n; b++)
+    {
+      Box3D box = occluders.get(b).box;
+      boolean[] edgeVis = edgeHasVisibleSegment[b];
+
+      for (int f = 0; f < 6; f++)
+      {
+        int[] faceEdges = box.FACE_TO_EDGES[f];
+        int count = 0;
+        for (int k = 0; k < faceEdges.length; k++)
+          if (edgeVis[faceEdges[k]])
+            count++;
+
+        faceVisible[b][f] = count >= 2;
+      }
+    }
+  }
+
+  boolean isFaceGroupEnabled(int faceIndex)
+  {
+    // Face 0 = center_y = the box's base/ground face (screen-down); face 1 = far_y =
+    // the far/tall end (screen-up) - see Box3D.getVertices()/FACE_IDX.
+    if (faceIndex == 0) return data.facepattern.apply_bottom;
+    if (faceIndex == 1) return data.facepattern.apply_top;
+    return data.facepattern.apply_sides; // 2,3,4,5
+  }
+
+  void beginPatternCollect()
+  {
+    patternEdges.clear();
+    patternFaceQueue.clear();
+    patternFaceQueueIndex = 0;
+
+    int n = occluders.size();
+    for (int b = 0; b < n; b++)
+      for (int f = 0; f < 6; f++)
+        if (faceVisible[b][f] && isFaceGroupEnabled(f))
+          patternFaceQueue.add(new int[]{ b, f });
+  }
+
+  void appendFacePatternEdges(int boxIndex, int faceIndex)
+  {
+    Box3D box = occluders.get(boxIndex).box;
+
+    ArrayList<FacePatternWorldEdge> worldScratch = new ArrayList<FacePatternWorldEdge>();
+    generateFacePatternWorldEdges(box, boxIndex, faceIndex, data.facepattern.seed,
+      data.facepattern.lines_per_face, worldScratch);
+
+    PVector[] outWorld = new PVector[2];
+    ProjectedPoint[] outProjected = new ProjectedPoint[2];
+
+    for (int i = 0; i < worldScratch.size(); i++)
+    {
+      FacePatternWorldEdge s = worldScratch.get(i);
+      ProjectedPoint pa = data.camera.projectPointWithDepth(s.worldA, frame);
+      ProjectedPoint pb = data.camera.projectPointWithDepth(s.worldB, frame);
+
+      if (!clipSegmentToNearPlane(s.worldA, pa, s.worldB, pb, data.camera, frame, outWorld, outProjected))
+        continue;
+
+      patternEdges.add(new EdgeProjected(outProjected[0], outProjected[1], outWorld[0], outWorld[1], boxIndex));
+    }
+  }
+
+  void mergeIntoFinalGroup()
+  {
+    finalGroup.clear();
+    finalGroup.addAll(edgeGroup);
+    finalGroup.addAll(patternGroup);
   }
 
   // Casts a line-of-sight ray from worldPoint toward the camera and tests it against the
@@ -490,9 +684,11 @@ class LineBuilder implements BVH3DRayTest
 
   // While an occlusion build is running: draw a real 3D backdrop (solid boxes, native
   // Processing camera) instead of the old flat 2D wireframe preview, then overlay the
-  // 2D lines already resolved so far - but only once STAGE_EMIT has started, since
-  // finalGroup still holds the PREVIOUS build's (different camera angle) lines during
-  // STAGE_COLLECT and would show mismatched ghost lines if drawn then.
+  // 2D lines already resolved so far (edgeGroup/patternGroup, growing live - see
+  // showingLiveSubGroups) - but only once STAGE_EMIT has started. During STAGE_COLLECT,
+  // edgeGroup/patternGroup/finalGroup all still hold the PREVIOUS build's (different
+  // camera angle or box layout) lines, so nothing 2D is drawn at all then - just the 3D
+  // backdrop - to avoid a stale/mismatched overlay.
   void draw(boolean clipping, float clipWidth, float clipHeight)
   {
     pushStyle();
@@ -503,20 +699,44 @@ class LineBuilder implements BVH3DRayTest
     int c = data.style.lineColor.col;
     current_graphics.stroke(red(c), green(c), blue(c), 255);
 
-    boolean showFinalLines = !busy || !occlusionMode || stage == STAGE_EMIT;
-    if (showFinalLines && finalGroup != null)
+    if (showingLiveSubGroups())
+    {
+      edgeGroup.draw(clipping, clipWidth, clipHeight);
+      patternGroup.draw(clipping, clipWidth, clipHeight);
+    }
+    else if (!busy && finalGroup != null)
+    {
       finalGroup.draw(clipping, clipWidth, clipHeight);
+    }
 
     popStyle();
   }
 
+  // While a build is running (past STAGE_COLLECT), edgeGroup/patternGroup grow live and
+  // finalGroup only gets refreshed once at the very end (see mergeIntoFinalGroup) - so
+  // the progressive preview during a build must read the live sub-groups directly.
+  boolean showingLiveSubGroups()
+  {
+    return busy && occlusionMode && stage != STAGE_COLLECT;
+  }
+
   int getDisplayLineCount()
   {
+    if (showingLiveSubGroups())
+      return edgeGroup.size() + patternGroup.size();
+
     return (finalGroup != null) ? finalGroup.size() : 0;
   }
 
   BoundingBox getDisplayBoundingBox(boolean clipping, float clipWidth, float clipHeight)
   {
+    if (showingLiveSubGroups())
+    {
+      BoundingBox bbox = edgeGroup.getBoundingBox(clipping, clipWidth, clipHeight);
+      bbox.addBoundingBox(patternGroup.getBoundingBox(clipping, clipWidth, clipHeight));
+      return bbox;
+    }
+
     return (finalGroup != null) ? finalGroup.getBoundingBox(clipping, clipWidth, clipHeight) : new BoundingBox();
   }
 
@@ -530,12 +750,21 @@ class LineBuilder implements BVH3DRayTest
     return busy && occlusionMode;
   }
 
+  int getTotalPhases()
+  {
+    return facePatternActive() ? 4 : 2;
+  }
+
   int getPhaseIndex()
   {
     if (stage == STAGE_COLLECT)
       return 1;
     if (stage == STAGE_EMIT)
       return 2;
+    if (stage == STAGE_PATTERN_COLLECT)
+      return 3;
+    if (stage == STAGE_PATTERN_EMIT)
+      return 4;
     return 0;
   }
 
@@ -545,6 +774,10 @@ class LineBuilder implements BVH3DRayTest
       return "collecting";
     if (stage == STAGE_EMIT)
       return "emitting";
+    if (stage == STAGE_PATTERN_COLLECT)
+      return "pattern collecting";
+    if (stage == STAGE_PATTERN_EMIT)
+      return "pattern emitting";
     return "idle";
   }
 
@@ -558,6 +791,10 @@ class LineBuilder implements BVH3DRayTest
       return meshIndex / meshCount;
     if (stage == STAGE_EMIT)
       return (edges.size() <= 0) ? 0 : edgeIndex / (float)max(1, edges.size());
+    if (stage == STAGE_PATTERN_COLLECT)
+      return (patternFaceQueue.size() <= 0) ? 0 : patternFaceQueueIndex / (float)max(1, patternFaceQueue.size());
+    if (stage == STAGE_PATTERN_EMIT)
+      return (patternEdges.size() <= 0) ? 0 : patternEdgeIndex / (float)max(1, patternEdges.size());
 
     return 0.0;
   }
@@ -567,13 +804,13 @@ class LineBuilder implements BVH3DRayTest
     if (!busy || sourceMeshes == null || sourceMeshes.size() == 0)
       return 1.0;
 
-    float meshCount = max(1, sourceMeshes.size());
-    if (stage == STAGE_COLLECT)
-      return 0.5 * (meshIndex / meshCount);
-    if (stage == STAGE_EMIT)
-      return 0.5 + 0.5 * (edges.size() <= 0 ? 0 : edgeIndex / (float)max(1, edges.size()));
+    int totalPhases = getTotalPhases();
+    float phaseSpan = 1.0 / totalPhases;
+    int phaseIdx = getPhaseIndex();
+    if (phaseIdx <= 0)
+      return 0.0;
 
-    return 0.0;
+    return (phaseIdx - 1) * phaseSpan + phaseSpan * getPhaseProgress01();
   }
 
   String getStatusText()
@@ -581,7 +818,7 @@ class LineBuilder implements BVH3DRayTest
     if (!busy)
       return "idle";
 
-    return getPhaseIndex() + "/2 " + getPhaseName() + " " + int(getPhaseProgress01() * 100) + "%";
+    return getPhaseIndex() + "/" + getTotalPhases() + " " + getPhaseName() + " " + int(getPhaseProgress01() * 100) + "%";
   }
 
   float getElapsedMs()
