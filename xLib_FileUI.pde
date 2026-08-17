@@ -31,7 +31,8 @@ void bringNativeFileDialogToFront() {
       }
       if (++tries[0] >= 40) t.stop();  // give up after ~6s - dialog may have been cancelled instantly
     }
-  });
+  }
+  );
   t.setRepeats(true);
   t.start();
 }
@@ -92,8 +93,8 @@ class FileGUI extends GUIPanel
   static final int FILE_UI_SAVE_PICK = 2;
   static final int FILE_UI_CONFIRM_OVERWRITE = 3;
 
-  static final int FILE_SLOT_COLUMNS = 3;
-  static final int FILE_SLOT_ROWS = 10;
+  static final int FILE_SLOT_COLUMNS = 4;
+  static final int FILE_SLOT_ROWS = 4;
   static final int MAX_FILE_SLOTS = FILE_SLOT_COLUMNS * FILE_SLOT_ROWS;
   static final int FILE_SLOT_WIDTH = 220;
   static final int FILE_SLOT_HEIGHT = 20;
@@ -108,6 +109,16 @@ class FileGUI extends GUIPanel
   String current_relpath = "";
   int file_list_page = 0;
   String pending_overwrite_name = null;
+  // When true, refreshFileList() runs on the NEXT draw() frame instead of
+  // immediately - see setPendingRefresh()/draw() for why.
+  boolean pending_refresh = false;
+  // ControlP5 re-fires a click within the same frame if the button under the mouse
+  // is still present but its meaning changed mid-dispatch (confirmed empirically:
+  // navigating into a folder immediately re-triggered a second "navigate" call,
+  // doubling the path segment - deferring the relabel alone wasn't enough, since the
+  // ghost click still runs the same handler again with the metadata unchanged).
+  // shouldSkipDuplicateNavAction() blocks a second nav action within one frame.
+  int last_nav_action_frame = -1;
 
   Button[] file_slot_buttons = new Button[MAX_FILE_SLOTS];
   String[] file_slot_name = new String[MAX_FILE_SLOTS];
@@ -244,14 +255,23 @@ class FileGUI extends GUIPanel
     setupFilePickerControls();
   }
 
+  // The picker's controls live on cp5's built-in "default" tab (labeled "Hide GUI"
+  // in trace_3d.pde's setup()) instead of the "Files" tab, so opening Load/Save-as
+  // doesn't pile a busy button grid onto the Files tab's own permanent controls.
+  // enterState() brings that tab to front while a picker state is active and back
+  // to "Files" on return - same bringToFront() mechanism already used for the
+  // initial tab in DataGUI.Init().
   void setupFilePickerControls()
   {
-    space();
-    file_ui_status_label = addLabel("");
-    nextLine();
+    float px = StartX;
+    float py = StartY;
 
-    float slot_start_x = xPos;
-    float slot_start_y = yPos;
+    file_ui_status_label = addLabel("");
+    file_ui_status_label.setPosition(px, py).moveTo("default");
+    py += heightCtrl + 6;
+
+    float slot_start_x = px;
+    float slot_start_y = py;
 
     for (int i = 0; i < MAX_FILE_SLOTS; i++)
     {
@@ -264,39 +284,56 @@ class FileGUI extends GUIPanel
         .setPosition(bx, by)
         .setSize(FILE_SLOT_WIDTH, FILE_SLOT_HEIGHT)
         .setLabel("")
-        .moveTo(pageName);
+        .moveTo("default");
       bt.hide();
       file_slot_buttons[i] = bt;
     }
 
-    yPos = slot_start_y + FILE_SLOT_ROWS * (FILE_SLOT_HEIGHT + FILE_SLOT_YGAP);
-    xPos = StartX;
+    py = slot_start_y + FILE_SLOT_ROWS * (FILE_SLOT_HEIGHT + FILE_SLOT_YGAP) + 10;
 
     up_dir_bt = addButton("..");
+    up_dir_bt.setPosition(px, py).moveTo("default");
     up_dir_bt.plugTo(this, "onUpDir");
+    px += 105;
     prev_page_bt = addButton("< Prev");
+    prev_page_bt.setPosition(px, py).moveTo("default");
     prev_page_bt.plugTo(this, "onPrevPage");
+    px += 105;
     next_page_bt = addButton("Next >");
+    next_page_bt.setPosition(px, py).moveTo("default");
     next_page_bt.plugTo(this, "onNextPage");
-    nextLine();
+
+    px = StartX;
+    py += heightCtrl + 6;
 
     new_filename_field = cp5.addTextfield("new_filename_field")
-      .setPosition(xPos, yPos)
+      .setPosition(px, py)
       .setSize(widthCtrl, heightCtrl)
       .setAutoClear(false)
-      .moveTo(pageName);
+      .moveTo("default");
     new_filename_field.hide();
-    xPos += widthCtrl + xspace;
+    px += widthCtrl + xspace;
 
     create_bt = addButton("Create");
+    create_bt.setPosition(px, py).moveTo("default");
     create_bt.plugTo(this, "onCreateNewFile");
-    nextLine();
+
+    px = StartX;
+    py += heightCtrl + 6;
 
     confirm_overwrite_bt = addButton("Yes, overwrite");
+    confirm_overwrite_bt.setPosition(px, py).moveTo("default");
     confirm_overwrite_bt.plugTo(this, "onConfirmOverwrite");
+    px += 140;
     cancel_bt = addButton("Cancel");
+    cancel_bt.setPosition(px, py).moveTo("default");
     cancel_bt.plugTo(this, "onCancel");
-    nextLine();
+
+    // addButton() advances xPos/yPos on the Files-tab layout cursor as a side effect
+    // of building the controls above - reset it since setupControls() is otherwise
+    // done with the Files tab at this point.
+    xPos = StartX;
+    yPos = StartY;
 
     enterState(FILE_UI_NORMAL);
   }
@@ -337,6 +374,11 @@ class FileGUI extends GUIPanel
     file_ui_state = new_state;
     stop_compute = (new_state != FILE_UI_NORMAL);
 
+    if (new_state == FILE_UI_NORMAL)
+      cp5.getTab(pageName).bringToFront();
+    else
+      cp5.getTab("default").bringToFront();
+
     for (Button b : file_slot_buttons)
       b.hide();
     up_dir_bt.hide();
@@ -358,7 +400,8 @@ class FileGUI extends GUIPanel
       file_ui_status_label.setText("Select a file to overwrite, or type a new name:");
       refreshFileList();
       new_filename_field.show();
-      new_filename_field.clear();
+      new_filename_field.setText(data.name);
+      new_filename_field.setFocus(true);
       create_bt.show();
       cancel_bt.show();
     } else if (new_state == FILE_UI_CONFIRM_OVERWRITE)
@@ -393,11 +436,19 @@ class FileGUI extends GUIPanel
     }
     Collections.sort(dirs, String.CASE_INSENSITIVE_ORDER);
     Collections.sort(files, String.CASE_INSENSITIVE_ORDER);
+    println("[FileUI] refreshFileList relpath='" + current_relpath + "' dir=" + dir.getAbsolutePath()
+      + " exists=" + dir.exists() + " dirs=" + dirs.size() + " files=" + files.size());
 
     ArrayList<String> combined = new ArrayList<String>();
     ArrayList<Boolean> combined_is_dir = new ArrayList<Boolean>();
-    for (String d : dirs) { combined.add(d); combined_is_dir.add(true); }
-    for (String f : files) { combined.add(f); combined_is_dir.add(false); }
+    for (String d : dirs) {
+      combined.add(d);
+      combined_is_dir.add(true);
+    }
+    for (String f : files) {
+      combined.add(f);
+      combined_is_dir.add(false);
+    }
 
     int total = combined.size();
     int start = file_list_page * MAX_FILE_SLOTS;
@@ -424,6 +475,7 @@ class FileGUI extends GUIPanel
       up_dir_bt.hide();
     else
       up_dir_bt.show();
+    println("[FileUI] up_dir_bt " + (current_relpath.length() == 0 ? "hidden" : "shown") + " (isVisible=" + up_dir_bt.isVisible() + ")");
 
     if (file_list_page > 0)
       prev_page_bt.show();
@@ -439,14 +491,21 @@ class FileGUI extends GUIPanel
   void onFileSlotClicked(int i)
   {
     String name = file_slot_name[i];
+    println("[FileUI] onFileSlotClicked i=" + i + " name=" + name + " is_dir=" + file_slot_is_dir[i] + " state=" + file_ui_state);
     if (name == null)
       return;
 
     if (file_slot_is_dir[i])
     {
+      if (shouldSkipDuplicateNavAction())
+      {
+        println("[FileUI] ignoring re-entrant folder click this frame (i=" + i + ")");
+        return;
+      }
       current_relpath = (current_relpath.length() == 0) ? name : current_relpath + "/" + name;
+      println("[FileUI] navigated into current_relpath='" + current_relpath + "'");
       file_list_page = 0;
-      refreshFileList();
+      pending_refresh = true;
       return;
     }
 
@@ -460,27 +519,63 @@ class FileGUI extends GUIPanel
     }
   }
 
+  // Blocks a second navigation action (folder click / up / prev / next) dispatched
+  // within the same Processing frame - a real distinct user click can never land in
+  // the same frame as another (frames are ~16ms apart), so this only ever catches
+  // the ControlP5 ghost re-dispatch, never a legitimate fast click.
+  boolean shouldSkipDuplicateNavAction()
+  {
+    if (frameCount == last_nav_action_frame)
+      return true;
+    last_nav_action_frame = frameCount;
+    return false;
+  }
+
   void onUpDir()
   {
+    if (shouldSkipDuplicateNavAction())
+    {
+      println("[FileUI] ignoring re-entrant up-dir click this frame");
+      return;
+    }
     int idx = current_relpath.lastIndexOf('/');
     current_relpath = (idx < 0) ? "" : current_relpath.substring(0, idx);
     file_list_page = 0;
-    refreshFileList();
+    pending_refresh = true;
   }
 
   void onPrevPage()
   {
+    if (shouldSkipDuplicateNavAction())
+      return;
     if (file_list_page > 0)
     {
       file_list_page--;
-      refreshFileList();
+      pending_refresh = true;
     }
   }
 
   void onNextPage()
   {
+    if (shouldSkipDuplicateNavAction())
+      return;
     file_list_page++;
-    refreshFileList();
+    pending_refresh = true;
+  }
+
+  // ControlP5 appears to re-evaluate a click within the same dispatch pass if the
+  // button under the cursor gets relabeled synchronously inside its own click
+  // handler (confirmed empirically: navigating into a folder immediately re-fired
+  // a second click on whatever file now occupies that same slot). Deferring the
+  // actual relabeling to the next draw() frame - after ControlP5 has fully finished
+  // dispatching the current click - avoids that re-entrant ghost click entirely.
+  void draw()
+  {
+    if (pending_refresh)
+    {
+      pending_refresh = false;
+      refreshFileList();
+    }
   }
 
   void onCreateNewFile()
@@ -490,6 +585,15 @@ class FileGUI extends GUIPanel
 
   void handleNewFilenameSubmitted(String raw)
   {
+    // Guards against a duplicate submit: ControlP5's Textfield appears to re-fire its
+    // submit event when it loses focus, which happens right after a successful save
+    // hides it (enterState(FILE_UI_NORMAL)) - without this guard, that second,
+    // stale event would run again, now find the just-created file, and immediately
+    // ask to confirm overwriting it. Only meaningful to process while still in
+    // FILE_UI_SAVE_PICK.
+    if (file_ui_state != FILE_UI_SAVE_PICK)
+      return;
+
     String trimmed = (raw == null) ? "" : raw.trim();
     if (trimmed.length() == 0)
     {

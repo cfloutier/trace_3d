@@ -9,6 +9,7 @@
   "FacePattern": {
     "line_length_random": 140,
     "lines_per_face": 44,
+    "vertical_bias": 0,
     "seed": 1066063869,
     "line_length_min": 46.66666793823242,
     "apply_bottom": false,
