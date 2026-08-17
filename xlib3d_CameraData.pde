@@ -156,6 +156,43 @@ class CameraData extends GenericData implements CameraProjector3D
     markChanged();
   }
 
+  // Moves the target along the world-horizontal (XZ) plane using the camera's current
+  // facing direction flattened onto that plane, instead of the camera's own (tilted)
+  // right/up plane - so a drag "walks" the target across the ground regardless of pitch.
+  // Same screen-delta -> world-delta scaling and sign convention as panTargetByScreenDelta
+  // (mouse-drag axis mirrored: dx -> flattened right, dy -> flattened forward).
+  void panTargetOnHorizontalPlane(float dxPixels, float dyPixels, float viewScale)
+  {
+    CameraFrame frame = buildFrame();
+    float safeViewScale = max(1e-6, viewScale);
+
+    float worldPerPixel;
+    if (projection_mode == PROJECTION_ORTHO)
+      worldPerPixel = 1.0 / max(1e-6, ortho_zoom * safeViewScale);
+    else
+      worldPerPixel = target_distance / max(1e-6, frame.focal * safeViewScale);
+
+    PVector rightFlat = new PVector(frame.right.x, 0, frame.right.z);
+    if (rightFlat.magSq() < 1e-9)
+      rightFlat.set(1, 0, 0);
+    else
+      rightFlat.normalize();
+
+    PVector forwardFlat = new PVector(frame.forward.x, 0, frame.forward.z);
+    if (forwardFlat.magSq() < 1e-9)
+      forwardFlat.set(0, 0, 1);
+    else
+      forwardFlat.normalize();
+
+    PVector deltaRight = PVector.mult(rightFlat, -dxPixels * worldPerPixel);
+    PVector deltaForward = PVector.mult(forwardFlat, dyPixels * worldPerPixel);
+    PVector delta = PVector.add(deltaRight, deltaForward);
+
+    target_x += delta.x;
+    target_z += delta.z;
+    markChanged();
+  }
+
   // Free-look: changes yaw/pitch (look direction) while keeping the camera's world position
   // fixed, instead of orbiting the camera around a fixed target. Since camera position is
   // derived from target + target_distance * direction(yaw,pitch), holding the camera position

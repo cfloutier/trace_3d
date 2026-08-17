@@ -45,14 +45,18 @@ class DataGUI extends MainPanel
     {
       float dx = mouseX - pmouseX;
       float dy = mouseY - pmouseY;
+      boolean shift = keyPressed && keyCode == SHIFT;
 
-      if (mouseButton == RIGHT && keyPressed && keyCode == SHIFT)
+      if (mouseButton == LEFT && shift)
+      {
+        data.camera.panTargetByScreenDelta(dx, dy, data.page.global_scale);
+      } else if (mouseButton == LEFT)
+      {
+        data.camera.panTargetOnHorizontalPlane(dx, dy, data.page.global_scale);
+      } else if (mouseButton == RIGHT && shift)
       {
         data.camera.lookAroundKeepingPosition(-dx * 0.01, -dy * 0.01);
       } else if (mouseButton == RIGHT)
-      {
-        data.camera.panTargetByScreenDelta(dx, dy, data.page.global_scale);
-      } else
       {
         data.camera.yaw = data.camera.wrapAngle(data.camera.yaw + dx * 0.01);
         data.camera.pitch = constrain(data.camera.pitch + dy * 0.01, -HALF_PI + 0.001, HALF_PI - 0.001);
