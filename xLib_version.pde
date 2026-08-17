@@ -1,12 +1,26 @@
 String get_xlib_version()
 {
-  return "3.12.2";
+  return "3.12.3";
 }
 
 
 /*
 
  # CHANGELOG
+
+ ## [3.12.3] - 2026-08-17
+ - xLib_Style: LoadJson() now sets changed = true at the end, like the base
+   GenericData.LoadJson() does - this custom override never did, so a project's own
+   draw()-gate checks on style.changed (or any per-chapter "did this change" check)
+   never saw a Load as a change. Same latent bug found and fixed in several
+   trace_3d-local (non-synced) files with their own custom LoadJson() overrides -
+   DataBoxes, DataOcclusion, CameraData, DataFacePattern - none of them propagated
+   "changed" either. Previously masked by MainPanel.setGUIValues() calling
+   Controller.setValue() with broadcast still enabled (setValue() firing a
+   ControlEvent like a real edit, incidentally marking every chapter "changed" as a
+   side effect) - now that 3.12.2 correctly suppresses that broadcast, this
+   pre-existing gap became visible: trace_3d stopped rebuilding its box mesh after a
+   Load, since DataBoxes.changed was never set.
 
  ## [3.12.2] - 2026-08-17
  - xLib_MainPanel: setGUIValues()/update_ui() now wrap their panel loop in

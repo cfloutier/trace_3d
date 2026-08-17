@@ -49,6 +49,8 @@ class DataBoxes extends GenericData
 
     grid.LoadJson(grid_json);
     tube.LoadJson(tube_json);
+
+    changed = true;
   }
 
   JSONObject SaveJson()

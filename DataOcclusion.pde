@@ -26,6 +26,8 @@ class DataOcclusion extends GenericData
     bisection_iterations = src.getInt("bisection_iterations", bisection_iterations);
     self_occlusion_eps_scale = src.getFloat("self_occlusion_eps_scale", self_occlusion_eps_scale);
     seam_edges_enabled = src.getBoolean("seam_edges_enabled", seam_edges_enabled);
+
+    changed = true;
   }
 
   JSONObject SaveJson()

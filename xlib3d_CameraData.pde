@@ -260,6 +260,8 @@ class CameraData extends GenericData implements CameraProjector3D
     target_x = src.getFloat("target_x", target_x);
     target_y = src.getFloat("target_y", target_y);
     target_z = src.getFloat("target_z", target_z);
+
+    changed = true;
   }
 
   JSONObject SaveJson()

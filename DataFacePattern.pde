@@ -33,6 +33,8 @@ class DataFacePattern extends GenericData
     apply_top = src.getBoolean("apply_top", apply_top);
     apply_bottom = src.getBoolean("apply_bottom", apply_bottom);
     seed = src.getInt("seed", seed);
+
+    changed = true;
   }
 
   JSONObject SaveJson()
