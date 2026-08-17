@@ -132,5 +132,6 @@ class BoxesGUI extends GUIPanel
       distribution_mode.activate(boxes.distribution_mode);
 
     updateDistributionVisibility();
+    grid_ui.update_ui();
   }
 }

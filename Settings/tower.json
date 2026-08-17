@@ -2,7 +2,7 @@
   "Occlusion": {
     "sample_step_px": 1.25,
     "self_occlusion_eps_scale": 1.0000000474974513E-4,
-    "seam_edges_enabled": false,
+    "seam_edges_enabled": true,
     "bisection_iterations": 10,
     "enabled": true
   },
@@ -20,18 +20,18 @@
     "global_scale": 1
   },
   "Camera": {
-    "target_x": -182.480224609375,
-    "target_distance": 1868.8115234375,
-    "target_y": -1627.8660888671875,
-    "target_z": 106.7144775390625,
+    "target_x": 399.630126953125,
+    "target_distance": 1483.5228271484375,
+    "target_y": -2321.71240234375,
+    "target_z": 359.4977111816406,
     "projection_mode": 1,
     "ortho_zoom": 0.25085097551345825,
-    "pitch": 0.31420278549194336,
+    "pitch": 0.6142034530639648,
     "fov": 88.20000457763672,
-    "yaw": 0.7668137550354004
+    "yaw": 0.6268157958984375
   },
   "Boxes": {
-    "random_seed": 160000,
+    "random_seed": -332555205,
     "Tube": {
       "base_y_min": -1240,
       "box_multiplier": 1,
@@ -45,15 +45,15 @@
     },
     "Grid": {
       "random_size": 0,
-      "random_h": 1000,
-      "spacing": 84.0999984741211,
+      "random_h": 10000,
+      "spacing": 88,
       "box_height": 541.300048828125,
-      "box_size": 32,
+      "box_size": 31.040000915527344,
       "perlin_zoom": 0.15000000596046448,
       "distance_bias": -1,
-      "count_z": 35,
+      "count_z": 19,
       "height_mode": 3,
-      "count_x": 34
+      "count_x": 18
     },
     "distribution_mode": 0
   }
