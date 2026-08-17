@@ -16,6 +16,7 @@ Sketch Processing pour generer un champ de Box3D projete en 2D (wireframe), avec
 - Meshes
 - Camera
 - Occlusion
+- Pattern
 - Style
 - Files
 
@@ -23,12 +24,20 @@ Au demarrage, les valeurs sont chargees depuis Settings/default.json.
 
 ## Interaction utilisateur
 
-- Drag souris sur le canvas: orbite camera (yaw, pitch).
-- Drag clic droit sur le canvas: deplace la cible camera (pan).
+- Drag clic gauche: deplace la cible sur le plan horizontal (Y inchange), dans la
+  direction de vue actuelle de la camera aplatie sur ce plan (axe Y souris inverse:
+  on se deplace "vers l avant" quand on tire la souris vers le bas). Independant du
+  pitch, donc utilisable meme en vue plongeante.
+- Shift + drag clic gauche: pan classique dans le plan ecran de la camera (deplace
+  la cible le long de right/up de la camera).
+- Drag clic droit: orbite camera autour de la cible (yaw, pitch).
+- Shift + drag clic droit: reoriente la direction de la camera (yaw, pitch) en
+  gardant sa position monde fixe; la cible est recalculee pour suivre (free-look).
 - Molette souris sur le canvas:
 - Perspective: agit sur target_distance.
 - Ortho: agit sur ortho_zoom.
-- Boutons Camera: Front, Back, Left, Right, Iso, Top.
+- Boutons Camera: Front, Back, Left, Right, Iso, Top, Center (recentre la cible sur
+  l origine du monde).
 
 Important: les interactions camera sont desactivees si la souris est au-dessus de la GUI.
 
@@ -85,6 +94,36 @@ donc refait que lorsque la geometrie des boites change, jamais au simple drag ca
 mais reste potentiellement couteux sur des scenes avec beaucoup de recouvrements, d ou
 l option desactivee par defaut.
 
+## Motifs sur les faces (Pattern)
+
+Onglet Pattern (visible uniquement utile si Occlusion.enabled): ajoute des lignes de
+hachures verticales sur les faces visibles des Box3D, en reutilisant le pipeline HLR.
+
+Fonctionnement (2e passe, apres l occlusion normale):
+1. Pendant la 1ere passe (aretes de boite), chaque arete qui produit au moins un
+   segment reellement visible est memorisee (edgeHasVisibleSegment).
+2. A la fin de cette passe, une face est consideree visible si au moins 2 de ses 4
+   aretes bordantes ont ete memorisees ainsi (un simple effleurement d arete ne
+   suffit pas).
+3. Pour chaque face visible et appartenant a un groupe active (cotes / dessus /
+   dessous), des lignes verticales sont generees (position aleatoire le long de
+   l axe horizontal de la face, pleine hauteur le long de l axe vertical propre a
+   la face - pas la verticale ecran), puis passees par le meme ray-casting de
+   visibilite que les aretes normales.
+
+Parametres:
+- enabled: active/desactive le motif.
+- lines_per_face: nombre de lignes generees par face visible (peut monter haut,
+  ex. 200-300, selon la densite voulue).
+- apply_sides / apply_top / apply_bottom: groupes de faces concernes (cotes actif
+  par defaut; dessus/dessous off par defaut).
+- seed: graine dediee au motif, independante de random_seed (Meshes) - permet de
+  retirer les lignes sans changer la disposition des boites.
+
+Recalcul partiel: modifier uniquement un parametre Pattern ne relance pas la passe
+d occlusion des aretes/coutures (couteuse) - seules les lignes de motif sont
+regenerees, tant que Meshes/Camera/Occlusion n ont pas change entre-temps.
+
 ## Export SVG
 
 Deux options existent dans l onglet Files:
@@ -107,20 +146,25 @@ Fichiers principaux:
 - DataGlobal.pde: aggregation des chapitres de donnees.
 - DataGUI.pde: tabs GUI + interactions souris.
 - DataOcclusion.pde: parametres HLR + UI Occlusion.
+- DataFacePattern.pde: parametres + UI du motif de hachures sur les faces (onglet Pattern).
 - xlib3d_Mesh.pde: abstraction Mesh + primitives projetees (EdgeProjected, OccluderBox).
-- xlib3d_Box3D.pde: decomposition d une box en aretes, intersection rayon-boite (OBB, slab method).
+- xlib3d_Box3D.pde: decomposition d une box en aretes/faces (EDGE_IDX, FACE_IDX,
+  EDGE_TO_FACES/FACE_TO_EDGES), intersection rayon-boite (OBB, slab method).
 - xlib3d_BVH3D.pde: BVH generique (broad-phase spatial) pour les requetes rayon "any-hit" et de recouvrement AABB.
 - xlib3d_BoxIntersection.pde: calcul des aretes de couture entre boites qui se recouvrent.
+- xlib3d_FacePattern.pde: generation geometrique des lignes de hachures sur une face de boite.
 - xlib3d_Camera3D.pde / xlib3d_CameraData.pde: projection camera + UI + deprojection ecran->monde.
 
 Objets de travail:
 - meshList: cache des Mesh.
-- lineGroup: geometrie 2D finale affichee/exportee.
+- lineGroup: geometrie 2D finale affichee/exportee (fusion interne de edgeGroup et
+  patternGroup dans LineBuilder - voir plus bas).
 
 Regle de recalcul:
-- Meshes change: rebuild meshList puis lignes.
-- Camera change: rebuild lignes seulement.
-- Occlusion change: rebuild lignes seulement.
+- Meshes / Camera / Occlusion change: rebuild complet (aretes + coutures + occlusion,
+  puis motif si actif).
+- Pattern seul change (Meshes/Camera/Occlusion inchanges): rebuild partiel, seules les
+  lignes de motif sont regenerees (LineBuilder.requestPatternOnlyRebuild).
 
 ## Reglages persistes
 
@@ -133,6 +177,7 @@ Chapitres JSON attendus:
 - Camera
 - Boxes
 - Occlusion
+- FacePattern
 
 Si un champ est absent, la valeur par defaut du code est utilisee.
 
@@ -142,8 +187,9 @@ Le projet embarque des fichiers xLib_*.pde copies localement. Les evolutions glo
 
 ## TODO
 
-- Hachures (shading) selon l orientation par rapport a la lumiere, attachees au mesh
-  comme les aretes de couture (a venir).
+- Motifs sur les faces (onglet Pattern): pour l instant un seul mode de generation
+  (lignes verticales). Texture differente prevue plus tard specifiquement pour les
+  faces dessus/dessous (actuellement meme mode que les cotes).
 - Limitation connue: pendant le calcul HLR (busy), la GUI ControlP5 peut afficher des
   artefacts visuels (lignes 2D visibles au travers, rendu de texte parfois corrompu) la
   ou elle chevauche le contenu 3D/2D. Cause probable: interaction d etat GL entre le
