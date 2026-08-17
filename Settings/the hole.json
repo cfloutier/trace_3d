@@ -6,6 +6,17 @@
     "bisection_iterations": 10,
     "enabled": true
   },
+  "FacePattern": {
+    "line_length_random": 426.66668701171875,
+    "lines_per_face": 10,
+    "vertical_bias": 0,
+    "seed": 1,
+    "line_length_min": 30,
+    "apply_bottom": false,
+    "apply_sides": true,
+    "apply_top": false,
+    "enabled": true
+  },
   "Style": {
     "backgroundColor": -16777216,
     "lineColor": -1,
@@ -17,13 +28,13 @@
     "margin": 2,
     "clip_height": 793.3333740234375,
     "paper_format": 2,
-    "global_scale": 0.8824220895767212
+    "global_scale": 0.8947924971580505
   },
   "Camera": {
-    "target_x": -455.2436828613281,
+    "target_x": -47.75212478637695,
     "target_distance": 4631.93359375,
     "target_y": 2489.04150390625,
-    "target_z": -596.7888793945312,
+    "target_z": 168.3675994873047,
     "projection_mode": 1,
     "ortho_zoom": 1,
     "pitch": -1.5657963752746582,
@@ -40,14 +51,22 @@
       "base_y_max": 20000,
       "radius_min": 1006,
       "box_length_max": 1509.13330078125,
-      "levels": 8,
       "box_count": 344,
       "box_length_min": 686.6000366210938
     },
     "Grid": {
+      "random_size": 0,
+      "random_h": 0,
       "spacing": 90,
       "box_height": 120,
-      "count": 400
+      "box_size": 32,
+      "perlin_zoom": 0.15000000596046448,
+      "distance_bias": 1,
+      "rotation_y": 0,
+      "count_z": 4,
+      "random_rotation_y": 0,
+      "height_mode": 0,
+      "count_x": 4
     },
     "distribution_mode": 1
   }

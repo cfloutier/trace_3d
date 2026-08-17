@@ -26,12 +26,17 @@ int hashFaceSeed(int patternSeed, int boxIndex, int faceIndex)
 }
 
 // Appends `linesPerFace` vertical hachure lines for one face of `box` into `out`. Each
-// line is placed at a random position on the face (both along the face's local
-// "vertical" axis - FACE_VERTICAL_IS_V - and across it) and its length is
-// lengthMin + random(0, lengthRandom), clamped to the face's vertical extent so it
-// never overshoots past the face's own edge.
+// line is centered on a random point on the face (both along the face's local
+// "vertical" axis - FACE_VERTICAL_IS_V, which always points from the face's bottom
+// edge to its top edge - and across it) and grows outward from that point in both
+// directions by lengthMin + random(0, lengthRandom), truncated at the face's own
+// edge if it would otherwise overshoot (so the actual length can end up shorter
+// than requested for lines centered near an edge).
+// verticalBias skews where along that vertical axis the center point lands: negative
+// pushes it toward the bottom, 0 is uniform, positive pushes it toward the top.
 void generateFacePatternWorldEdges(Box3D box, int boxIndex, int faceIndex, int patternSeed,
-  int linesPerFace, float lengthMin, float lengthRandom, ArrayList<FacePatternWorldEdge> out)
+  int linesPerFace, float lengthMin, float lengthRandom, float verticalBias,
+  ArrayList<FacePatternWorldEdge> out)
 {
   PVector[] verts = box.getVertices();
   PVector c0 = verts[box.FACE_IDX[faceIndex][0]];
@@ -47,16 +52,32 @@ void generateFacePatternWorldEdges(Box3D box, int boxIndex, int faceIndex, int p
   float spanLen = spanAxis.mag();
   PVector spanDir = (spanLen > 1e-6) ? PVector.div(spanAxis, spanLen) : new PVector(0, 0, 0);
 
+  // Power-law skew on a uniform [0,1] draw: exponent 1 = uniform (bias 0); >1 pulls
+  // samples down toward 0 (bottom); <1 pushes them up toward 1 (top). base 3 gives a
+  // clearly visible effect across the full [-1,1] range without being all-or-nothing
+  // at the extremes.
+  float biasExponent = pow(3.0, -verticalBias);
+
   for (int i = 0; i < linesPerFace; i++)
   {
     float posAcross = random(0, 1);
     PVector base = PVector.add(c0, PVector.mult(acrossAxis, posAcross));
 
     float lineLength = min(max(0, lengthMin) + random(0, max(0, lengthRandom)), spanLen);
-    float posStart = random(0, max(0, spanLen - lineLength));
+
+    // Draw a point anywhere on the face's vertical extent (biased), then grow the
+    // line outward from it in both directions (half up, half down) - not just
+    // upward from it - so lines can land anywhere, including flush against the
+    // top or bottom edge, instead of always starting at the drawn point. Each end
+    // is truncated independently at the face's own edge rather than shifting the
+    // whole line, so a point drawn near an edge yields a shorter line there.
+    float posPoint = pow(random(0, 1), biasExponent) * spanLen;
+    float half = lineLength * 0.5;
+    float posStart = max(0, posPoint - half);
+    float posEnd = min(spanLen, posPoint + half);
 
     PVector p0 = PVector.add(base, PVector.mult(spanDir, posStart));
-    PVector p1 = PVector.add(p0, PVector.mult(spanDir, lineLength));
+    PVector p1 = PVector.add(base, PVector.mult(spanDir, posEnd));
     out.add(new FacePatternWorldEdge(p0, p1));
   }
 }
