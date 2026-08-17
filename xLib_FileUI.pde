@@ -436,8 +436,6 @@ class FileGUI extends GUIPanel
     }
     Collections.sort(dirs, String.CASE_INSENSITIVE_ORDER);
     Collections.sort(files, String.CASE_INSENSITIVE_ORDER);
-    println("[FileUI] refreshFileList relpath='" + current_relpath + "' dir=" + dir.getAbsolutePath()
-      + " exists=" + dir.exists() + " dirs=" + dirs.size() + " files=" + files.size());
 
     ArrayList<String> combined = new ArrayList<String>();
     ArrayList<Boolean> combined_is_dir = new ArrayList<Boolean>();
@@ -475,7 +473,6 @@ class FileGUI extends GUIPanel
       up_dir_bt.hide();
     else
       up_dir_bt.show();
-    println("[FileUI] up_dir_bt " + (current_relpath.length() == 0 ? "hidden" : "shown") + " (isVisible=" + up_dir_bt.isVisible() + ")");
 
     if (file_list_page > 0)
       prev_page_bt.show();
@@ -491,7 +488,6 @@ class FileGUI extends GUIPanel
   void onFileSlotClicked(int i)
   {
     String name = file_slot_name[i];
-    println("[FileUI] onFileSlotClicked i=" + i + " name=" + name + " is_dir=" + file_slot_is_dir[i] + " state=" + file_ui_state);
     if (name == null)
       return;
 
@@ -503,7 +499,6 @@ class FileGUI extends GUIPanel
         return;
       }
       current_relpath = (current_relpath.length() == 0) ? name : current_relpath + "/" + name;
-      println("[FileUI] navigated into current_relpath='" + current_relpath + "'");
       file_list_page = 0;
       pending_refresh = true;
       return;
