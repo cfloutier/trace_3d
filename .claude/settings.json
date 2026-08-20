@@ -5,7 +5,16 @@
       "Bash(git ls-tree *)",
       "Bash(git switch *)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(where processing-java *)",
+      "Bash(where processing *)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Program Files\",\"C:\\\\Program Files \\(x86\\)\",\"$env:LOCALAPPDATA\\\\Programs\",\"$env:USERPROFILE\" -Filter \"processing-java.exe\" -Recurse -ErrorAction SilentlyContinue -Depth 4 | Select-Object -First 5 FullName)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\\",\"$env:USERPROFILE\\\\Desktop\",\"$env:USERPROFILE\\\\Downloads\",\"D:\\\\\" -Filter \"processing-java.exe\" -Recurse -ErrorAction SilentlyContinue -Depth 3 2>$null | Select-Object -First 5 FullName)",
+      "PowerShell(& \"C:\\\\dev\\\\FABLAB\\\\processing-4.3\\\\processing-java.exe\" --help 2>&1)",
+      "PowerShell(& \"C:\\\\dev\\\\FABLAB\\\\processing-4.3\\\\processing-java.exe\" --sketch=\"C:\\\\dev\\\\claude_sandbox\\\\processing\\\\spiral\" --output=\"C:\\\\dev\\\\claude_sandbox\\\\processing\\\\spiral\\\\build_windows\" --export --variant=windows-amd64 2>&1)",
+      "PowerShell(cd \"C:\\\\dev\\\\claude_sandbox\\\\processing\\\\spiral\"; powershell -ExecutionPolicy Bypass -File \".\\\\export_app.ps1\")",
+      "PowerShell(& \"C:\\\\dev\\\\FABLAB\\\\processing-4.3\\\\processing-java.exe\" --sketch=\"C:\\\\dev\\\\claude_sandbox\\\\processing\\\\spiral\" --output=\"C:\\\\dev\\\\claude_sandbox\\\\processing\\\\spiral\\\\build_test_linux\" --force --export --variant=linux-amd64 2>&1)",
+      "PowerShell(cd \"C:\\\\dev\\\\claude_sandbox\\\\processing\\\\perlin_mountains\"; powershell -ExecutionPolicy Bypass -File \".\\\\export_app.ps1\" -Zip $false)"
     ],
     "deny": [
       "Read(//d/**)",

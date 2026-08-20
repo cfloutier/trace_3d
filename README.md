@@ -1,18 +1,26 @@
 # trace_3d
 
-Sketch Processing pour generer un champ de Box3D projete en 2D (wireframe), avec camera orbitale, projection Ortho/Perspective, HLR analytique (ray-casting + BVH), et export SVG direct.
+Processing sketch that generates a field of Box3D meshes projected to 2D (wireframe), with an orbital camera, Ortho/Perspective projection, analytical HLR (ray-casting + BVH), and direct SVG export.
 
-## Objectif
+## Getting a Release
 
-- Produire des traces 2D propres a partir d une scene 3D simple.
-- Garder une interaction fluide avec un grand nombre de meshes.
-- Permettre des exports vectoriels fiables (affichage et export coherents).
+No Processing, Java, or ControlP5 installation is required to run a release build — everything needed is bundled in the zip.
 
-## Demarrage rapide
+1. Download the release zip (see `releases/` or wherever it was shared with you).
+2. Unzip it anywhere.
+3. Run the `.exe` inside — that's it.
 
-1. Ouvrir trace_3d.pde dans Processing.
-2. Lancer le sketch.
-3. Ajuster les parametres via les onglets:
+## Purpose
+
+- Produce clean 2D traces from a simple 3D scene.
+- Keep interaction smooth with a large number of meshes.
+- Provide reliable vector export (display and export stay consistent).
+
+## Quick Start
+
+1. Open trace_3d.pde in Processing.
+2. Run the sketch.
+3. Adjust parameters via the tabs:
 - Meshes
 - Camera
 - Occlusion
@@ -20,189 +28,165 @@ Sketch Processing pour generer un champ de Box3D projete en 2D (wireframe), avec
 - Style
 - Files
 
-Au demarrage, les valeurs sont chargees depuis Settings/default.json.
+On startup, values are loaded from Settings/default.json.
 
-## Interaction utilisateur
+## User Interaction
 
-- Drag clic gauche: deplace la cible sur le plan horizontal (Y inchange), dans la
-  direction de vue actuelle de la camera aplatie sur ce plan (axe Y souris inverse:
-  on se deplace "vers l avant" quand on tire la souris vers le bas). Independant du
-  pitch, donc utilisable meme en vue plongeante.
-- Shift + drag clic gauche: pan classique dans le plan ecran de la camera (deplace
-  la cible le long de right/up de la camera).
-- Drag clic droit: orbite camera autour de la cible (yaw, pitch).
-- Shift + drag clic droit: reoriente la direction de la camera (yaw, pitch) en
-  gardant sa position monde fixe; la cible est recalculee pour suivre (free-look).
-- Molette souris sur le canvas:
-- Perspective: agit sur target_distance.
-- Ortho: agit sur ortho_zoom.
-- Boutons Camera: Front, Back, Left, Right, Iso, Top, Center (recentre la cible sur
-  l origine du monde).
+- Left-click drag: moves the target on the horizontal plane (Y unchanged), in the
+  camera's current view direction flattened onto that plane (mouse Y axis inverted:
+  you move "forward" when dragging the mouse down). Independent of pitch, so it
+  still works in a steep top-down view.
+- Shift + left-click drag: classic pan in the camera's screen plane (moves the
+  target along the camera's right/up axes).
+- Right-click drag: orbits the camera around the target (yaw, pitch).
+- Shift + right-click drag: reorients the camera's look direction (yaw, pitch)
+  while keeping its world position fixed; the target is recomputed to follow
+  (free-look).
+- Mouse wheel over the canvas:
+- Perspective: affects target_distance.
+- Ortho: affects ortho_zoom.
+- Camera buttons: Front, Back, Left, Right, Iso, Top, Center (re-centers the target
+  on the world origin).
 
-Important: les interactions camera sont desactivees si la souris est au-dessus de la GUI.
+Important: camera interactions are disabled while the mouse is over the GUI.
 
-## Parametres Meshes
+## Meshes Parameters
 
-L onglet Meshes pilote la distribution des Box3D via un mode actif:
-- distribution_mode: Grid ou Tube.
-- random_seed: seed global partage par toutes les distributions.
+The Meshes tab drives the Box3D distribution through an active mode:
+- distribution_mode: Grid or Tube.
+- random_seed: global seed shared by all distributions (the "Seed" button draws a new random one).
 
-Mode Grid:
-- count
-- box_size
-- box_height
+### Grid Mode
 
-Mode Tube (aleatoire):
-- box_count
-- levels
-- radius_min / radius_max
-- base_y_min / base_y_max
-- box_length_min / box_length_max
-- box_size (section X/Z des boxes)
+| Parameter | Role |
+|-----------|------|
+| `count_x` / `count_z` | Number of boxes along each grid axis |
+| `spacing` | Distance between adjacent boxes |
+| `box_size` | Base size (X/Z) of each box |
+| `random_size` | Additional random variation on `box_size` (0 to this value) |
+| `box_height` | Base height of the boxes |
+| `height_mode` | Height variation mode: Fixed / White Noise / Perlin Noise / Distance |
+| `random_h` | Additional random height (0 to this value), applied according to `height_mode` |
+| `perlin_zoom` | Perlin noise scale (Perlin Noise mode only) |
+| `distance_bias` | Weight for Distance mode: positive = taller boxes at the center, negative = taller at the edges, 0 = uniform |
+| `rotation_y` | Base rotation of the boxes around the Y axis (degrees) |
+| `random_rotation_y` | Additional random rotation (+/- this value) |
 
-La geometrie 3D est mise en cache dans meshList et n est reconstruite que si Meshes change.
+### Tube Mode (random)
+
+| Parameter | Role |
+|-----------|------|
+| `box_count` | Base number of boxes |
+| `box_multiplier` | Multiplier applied to `box_count` (total count = box_count x box_multiplier) |
+| `radius_min` / `radius_max` | Range of box distance from the central axis |
+| `base_y_min` / `base_y_max` | Range of box base height |
+| `box_size` | X/Z cross-section of the boxes |
+| `box_length_min` / `box_length_max` | Range of box length (Y height) |
+
+3D geometry is cached in meshList and only rebuilt when Meshes changes.
+
+## Camera
+
+The Camera tab drives projection and viewpoint.
+
+| Parameter | Role |
+|-----------|------|
+| `projection_mode` | Ortho or Perspective |
+| `fov` | Field of view in Perspective mode |
+| `target_distance` | Camera-target distance (orbit radius), also controlled via the mouse wheel in Perspective |
+| `ortho_zoom` | Zoom in Ortho mode, also controlled via the mouse wheel |
+| `yaw` / `pitch` | Camera orientation around the target |
+| `target_x` / `target_y` / `target_z` | Target position in world space |
+
+See also [User Interaction](#user-interaction) for mouse controls and the quick-view buttons (Front/Back/Left/Right/Iso/Top/Center).
 
 ## Occlusion (HLR)
 
-Quand Occlusion.enabled est actif, le rendu passe par un HLR analytique (ray-casting objet-space, pas de rasterization):
-1. Collecte: pour chaque Box3D, un occludeur (bbox monde + centre + diagonale) et ses 12 aretes projetees (coordonnees ecran + coordonnees monde).
-2. Un BVH (xlib3d_BVH3D) est construit sur les occludeurs; il n est reconstruit que si la liste de boites change (pas au simple drag camera).
-3. Emission: chaque arete est echantillonnee en espace ecran (meme parametrisation qu avant, correcte en perspective via 1/z). A chaque echantillon, le point est deprojete en 3D et un rayon est lance vers la camera contre le BVH pour tester la visibilite exacte (intersection rayon-boite fermee, gere la rotation). Sur un changement de visibilite entre deux echantillons, une bissection affine le point de coupure exact (au lieu de le caler sur la grille d echantillonnage).
-4. Auto-occlusion: l origine du rayon est biaisee vers l exterieur de la boite proprietaire de l arete, avec un epsilon proportionnel a la diagonale de cette boite; un seuil specifique evite qu une arete de silhouette s auto-occulte par erreur, tout en laissant une vraie auto-occlusion (face arriere) fonctionner normalement.
+When Occlusion.enabled is active, rendering goes through an analytical HLR (Hidden
+Line Removal) pass: each box edge is ray-cast against the other boxes in the scene
+to determine exactly which portions are visible, rather than a simple approximate
+depth test.
 
-Parametres:
-- sample_step_px: pas d echantillonnage des aretes en espace ecran.
-- bisection_iterations: nombre d iterations de bissection pour affiner un point de coupure de visibilite.
-- self_occlusion_eps_scale: facteur (x diagonale de la boite) de l epsilon anti auto-occlusion.
-- seam_edges_enabled: ajoute les aretes de "couture" aux zones d intersection entre boites (off par defaut, voir plus bas).
+| Parameter | Role |
+|-----------|------|
+| `enabled` | Enables/disables the HLR computation |
+| `sample_step_px` | Edge sampling step in screen space |
+| `bisection_iterations` | Number of bisection iterations used to refine a visibility cutoff point |
+| `self_occlusion_eps_scale` | Factor (x box diagonal) for the anti self-occlusion epsilon |
+| `seam_edges_enabled` | Adds "seam" edges at intersection areas between boxes (off by default, can be costly on very dense scenes) |
 
-Notes:
-- En perspective, la profondeur des aretes est echantillonnee en interpolation 1/z (plus stable sur longues lignes), puis deprojetee en 3D pour le lancer de rayon.
-- Avec clipping actif, les echantillons hors du rectangle de clipping sont traites comme non visibles.
-- Les occludeurs sont des Box3D (potentiellement tournees, OBB) - le test rayon-boite est exact (methode des slabs en repere local), pas une approximation.
+For the algorithm details (ray-casting, BVH, bisection, seam edges), see [DEVELOPMENT.md](DEVELOPMENT.md).
 
-### Aretes de couture (intersections entre boites)
+## Face Pattern
 
-Quand Occlusion.seam_edges_enabled est actif, pour chaque paire de boites qui se
-recouvrent (reperees via BVH3D.queryOverlaps, broad-phase AABB), xlib3d_BoxIntersection
-calcule les segments ou une face de l une croise une face de l autre (intersection de
-plans + double decoupage rectangulaire) et les ajoute comme aretes supplementaires. Une
-arete de couture appartient visuellement aux deux boites a la fois (EdgeProjected porte
-un second index de proprietaire optionnel), donc les deux beneficient du seuil tolerant
-d auto-occlusion. Le calcul est purement geometrique (independant de la camera) et n est
-donc refait que lorsque la geometrie des boites change, jamais au simple drag camera -
-mais reste potentiellement couteux sur des scenes avec beaucoup de recouvrements, d ou
-l option desactivee par defaut.
+Pattern tab (only useful when Occlusion.enabled): adds vertical hatching lines on
+the visible faces of the Box3D meshes.
 
-## Motifs sur les faces (Pattern)
+| Parameter | Role |
+|-----------|------|
+| `enabled` | Enables/disables the pattern |
+| `lines_per_face` | Number of lines generated per visible face (can go high, e.g. 200-300, depending on desired density) |
+| `line_length_min` | Minimum line length |
+| `line_length_random` | Additional random length (0 to this value), added to `line_length_min` |
+| `vertical_bias` | Biases the vertical position of the lines' center point on the face (negative = toward the bottom, 0 = even distribution, positive = toward the top) |
+| `apply_sides` / `apply_top` / `apply_bottom` | Which face groups are affected (sides on by default; top/bottom off by default) |
+| `seed` | Dedicated seed for the pattern, independent of `random_seed` (Meshes) — lets you reroll the lines without changing the box layout (the "Seed" button draws a new one) |
 
-Onglet Pattern (visible uniquement utile si Occlusion.enabled): ajoute des lignes de
-hachures verticales sur les faces visibles des Box3D, en reutilisant le pipeline HLR.
+For the algorithm details (2nd ray-casting pass), see [DEVELOPMENT.md](DEVELOPMENT.md).
 
-Fonctionnement (2e passe, apres l occlusion normale):
-1. Pendant la 1ere passe (aretes de boite), chaque arete qui produit au moins un
-   segment reellement visible est memorisee (edgeHasVisibleSegment).
-2. A la fin de cette passe, une face est consideree visible si au moins 2 de ses 4
-   aretes bordantes ont ete memorisees ainsi (un simple effleurement d arete ne
-   suffit pas).
-3. Pour chaque face visible et appartenant a un groupe active (cotes / dessus /
-   dessous), des lignes verticales sont centrees sur un point aleatoire de la
-   surface de la face (aleatoire le long de l axe horizontal de la face ET le long
-   de son axe vertical propre - pas la verticale ecran) et s etendent depuis ce
-   point autant vers le haut que vers le bas, sur une longueur aleatoire
-   (line_length_min + valeur aleatoire dans [0, line_length_random]) ; si la ligne
-   deborderait le haut ou le bas de la face, elle est tronquee a la limite de la
-   face (donc plus courte que prevu pour un point tire pres d un bord). Le tout
-   passe ensuite par le meme ray-casting de visibilite que les aretes normales.
+## Style
 
-Parametres:
-- enabled: active/desactive le motif.
-- lines_per_face: nombre de lignes generees par face visible (peut monter haut,
-  ex. 200-300, selon la densite voulue).
-- line_length_min: longueur minimale d une ligne.
-- line_length_random: longueur aleatoire additionnelle (0 a cette valeur), ajoutee
-  a line_length_min.
-- vertical_bias: biaise la position verticale du point central des lignes sur la
-  face (negatif = plutot vers le bas, 0 = repartition egale, positif = plutot vers
-  le haut).
-- apply_sides / apply_top / apply_bottom: groupes de faces concernes (cotes actif
-  par defaut; dessus/dessous off par defaut).
-- seed: graine dediee au motif, independante de random_seed (Meshes) - permet de
-  retirer les lignes sans changer la disposition des boites.
+The Style tab controls the rendering appearance.
 
-Recalcul partiel: modifier uniquement un parametre Pattern ne relance pas la passe
-d occlusion des aretes/coutures (couteuse) - seules les lignes de motif sont
-regenerees, tant que Meshes/Camera/Occlusion n ont pas change entre-temps.
+| Parameter | Role |
+|-----------|------|
+| `lineWidth` | Width of the drawn lines |
+| `lineColor` | Line color |
+| `backgroundColor` | Background color |
 
-## Export SVG
+## Files & Export
 
-Deux options existent dans l onglet Files:
-- SVG direct (recommande): writer custom, plus fiable pour le plotter.
-- SVG (Processing): fallback legacy via renderer Processing.
+The Files tab groups settings load/save, clipping, and export.
 
-Le writer direct:
-- applique le clipping dans l espace dessin,
-- centre ensuite l export,
-- utilise une bbox coherente avec l etat de clipping.
+### Load / Save
 
-## Architecture du code
+Load and "Save as..." open a built-in file browser (no system window) that
+navigates the project's `Settings/` folder, including its sub-folders: clicking a
+file loads it (Load) or offers to overwrite it after confirmation (Save as...),
+clicking a folder navigates into it, ".." goes up one level. In Save as..., a new
+name can also be typed into a text field to create a file in the currently
+displayed folder. A Cancel button lets you back out without doing anything at any
+point.
 
-Fichiers principaux:
-- trace_3d.pde: boucle principale, orchestration recalculs/rendu.
-- LineBuilder.pde: generation des lignes 2D (normal + occlusion).
-- MeshDistribution.pde: data+UI du mode Meshes et routing Grid/Tube.
-- GridDistribution.pde: generation mode Grid.
-- TubeDistribution.pde: generation mode Tube aleatoire.
-- DataGlobal.pde: aggregation des chapitres de donnees.
-- DataGUI.pde: tabs GUI + interactions souris.
-- DataOcclusion.pde: parametres HLR + UI Occlusion.
-- DataFacePattern.pde: parametres + UI du motif de hachures sur les faces (onglet Pattern).
-- xlib3d_Mesh.pde: abstraction Mesh + primitives projetees (EdgeProjected, OccluderBox).
-- xlib3d_Box3D.pde: decomposition d une box en aretes/faces (EDGE_IDX, FACE_IDX,
-  EDGE_TO_FACES/FACE_TO_EDGES), intersection rayon-boite (OBB, slab method).
-- xlib3d_BVH3D.pde: BVH generique (broad-phase spatial) pour les requetes rayon "any-hit" et de recouvrement AABB.
-- xlib3d_BoxIntersection.pde: calcul des aretes de couture entre boites qui se recouvrent.
-- xlib3d_FacePattern.pde: generation geometrique des lignes de hachures sur une face de boite.
-- xlib3d_Camera3D.pde / xlib3d_CameraData.pde: projection camera + UI + deprojection ecran->monde.
+The "Save" button (next to "Save as...") directly overwrites the currently loaded
+file, without going through this browser.
 
-Objets de travail:
-- meshList: cache des Mesh.
-- lineGroup: geometrie 2D finale affichee/exportee (fusion interne de edgeGroup et
-  patternGroup dans LineBuilder - voir plus bas).
+### Clipping
 
-Regle de recalcul:
-- Meshes / Camera / Occlusion change: rebuild complet (aretes + coutures + occlusion,
-  puis motif si actif).
-- Pattern seul change (Meshes/Camera/Occlusion inchanges): rebuild partiel, seules les
-  lignes de motif sont regenerees (LineBuilder.requestPatternOnlyRebuild).
+- `Clip`: enables/disables the clipping rectangle.
+- `Clip width` / `Clip height`: dimensions of the rectangle.
+- `Clip Ratio`: locks the rectangle to a fixed proportion — None (free), A4, 16:9,
+  4:3, Raisin, or 1:1 (square). Moving either slider then recomputes the other
+  automatically.
+- `Landscape`: flips the orientation of the chosen ratio (long side horizontal or
+  vertical).
 
-## Reglages persistes
+### Export
 
-Fichier principal:
-- Settings/default.json
+- `Export Page size`: page format for export (None, A4, A3, A2, Raisin).
+- `Margins`: margin around the exported drawing (0, 1, 2, or 3 cm).
+- `Export SVG`: vector export via a custom writer (recommended, more reliable for
+  the plotter) that applies clipping in drawing space then centers and sizes the
+  export consistently with the display.
 
-Chapitres JSON attendus:
-- Style
-- Page
-- Camera
-- Boxes
-- Occlusion
-- FacePattern
+For architecture details, persisted settings, and the build procedure, see [DEVELOPMENT.md](DEVELOPMENT.md).
 
-Si un champ est absent, la valeur par defaut du code est utilisee.
+---
 
-## Notes xLib
+## Changelog
 
-Le projet embarque des fichiers xLib_*.pde copies localement. Les evolutions globales xLib se gerent via le workflow de synchronisation du depot processing_xlib.
-
-## TODO
-
-- Motifs sur les faces (onglet Pattern): pour l instant un seul mode de generation
-  (lignes verticales). Texture differente prevue plus tard specifiquement pour les
-  faces dessus/dessous (actuellement meme mode que les cotes).
-- Limitation connue: pendant le calcul HLR (busy), la GUI ControlP5 peut afficher des
-  artefacts visuels (lignes 2D visibles au travers, rendu de texte parfois corrompu) la
-  ou elle chevauche le contenu 3D/2D. Cause probable: interaction d etat GL entre le
-  rendu 3D natif (Preview3D) et l auto-draw de ControlP5, au dela d un simple hint
-  depth-test/depth-mask oublie (deja tente, insuffisant). Une fois le calcul termine,
-  le rendu est correct. Deprioritise pour l instant (cf. Preview3D.pde).
+### 2026-08-19 — xLib 3.13.4
+- **File picker**: Load/Save as... now use a built-in file browser (folders + files under `Settings/`) instead of the system dialog, which could open behind the main window on this sketch (P3D/JOGL renderer).
+- **Clip Ratio**: the clipping rectangle can be locked to a fixed proportion (None, A4, 16:9, 4:3, Raisin, 1:1), with a Landscape button to flip orientation.
+- **Build**: added `export_app.ps1` to produce a standalone application requiring no install for end users.
+- **Docs**: split into `README.md` (usage) and `DEVELOPMENT.md` (algorithms, architecture, build); Meshes (Grid/Tube), Camera, Style, and Files/Export parameters now documented in full (previously missing or incomplete).
