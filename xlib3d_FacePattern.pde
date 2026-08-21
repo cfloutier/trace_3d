@@ -52,11 +52,16 @@ void generateFacePatternWorldEdges(Box3D box, int boxIndex, int faceIndex, int p
   float spanLen = spanAxis.mag();
   PVector spanDir = (spanLen > 1e-6) ? PVector.div(spanAxis, spanLen) : new PVector(0, 0, 0);
 
-  // Power-law skew on a uniform [0,1] draw: exponent 1 = uniform (bias 0); >1 pulls
-  // samples down toward 0 (bottom); <1 pushes them up toward 1 (top). base 3 gives a
-  // clearly visible effect across the full [-1,1] range without being all-or-nothing
-  // at the extremes.
-  float biasExponent = pow(3.0, -verticalBias);
+  // Power-law skew on a uniform [0,1] draw. Always uses an exponent <= 1 (which
+  // concentrates draws toward 1 almost completely as |verticalBias| grows - the
+  // region that stays away from 1 shrinks double-exponentially with 1/exponent),
+  // then mirrors the result for negative bias - rather than using pow(3,-bias)
+  // directly as the exponent (exponent 1 = uniform, >1 for negative bias, <1 for
+  // positive bias), which looked symmetric but wasn't: an exponent > 1 only pushes
+  // MOST mass toward 0, leaving a boundary layer of width ~1/exponent (e.g. ~11%
+  // of lines at bias=-2) still spread over the middle/top - visibly looser than
+  // the same |bias| pushing toward the top, which had no such leftover.
+  float concentrationExponent = pow(3.0, -abs(verticalBias));
 
   for (int i = 0; i < linesPerFace; i++)
   {
@@ -71,7 +76,9 @@ void generateFacePatternWorldEdges(Box3D box, int boxIndex, int faceIndex, int p
     // top or bottom edge, instead of always starting at the drawn point. Each end
     // is truncated independently at the face's own edge rather than shifting the
     // whole line, so a point drawn near an edge yields a shorter line there.
-    float posPoint = pow(random(0, 1), biasExponent) * spanLen;
+    float concentrated = pow(random(0, 1), concentrationExponent);
+    float posFraction = (verticalBias >= 0) ? concentrated : (1 - concentrated);
+    float posPoint = posFraction * spanLen;
     float half = lineLength * 0.5;
     float posStart = max(0, posPoint - half);
     float posEnd = min(spanLen, posPoint + half);

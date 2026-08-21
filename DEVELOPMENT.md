@@ -97,6 +97,33 @@ Partial recompute: changing only a Pattern parameter does not re-run the
 (expensive) edge/seam occlusion pass — only the pattern lines are regenerated, as
 long as Meshes/Camera/Occlusion haven't changed in the meantime.
 
+### Shading
+
+Optional, computed in `LineBuilder.appendFacePatternEdges()` before calling
+`generateFacePatternWorldEdges()` — the generator itself stays unaware shading
+exists, so any future pattern type can reuse the same step. Implemented in
+`xlib3d_Shading.pde` (pure math) and `Shading.pde` (`ShadingData`/`ShadingGUI`,
+composed into `DataFacePattern`/`FacePatternGUI` the same way Grid/Tube are
+composed into `DataBoxes`/`BoxesGUI`):
+
+```
+lightDir   = computeLightDirection(light_yaw, light_pitch)   // same yaw/pitch
+                                                               // convention as
+                                                               // CameraData
+brightness = clamp(dot(faceNormal, lightDir) * power, 0, 1)  // Lambertian, power = light intensity
+multiplier = clamp(1 - brightness, 0, 1)
+effectiveLinesPerFace = round(lines_per_face * multiplier)
+```
+
+No separate density-strength slider: `power` (how bright the light gets) and
+`lines_per_face` (the base count it scales down from) already give enough
+control over how strong the effect looks.
+
+`faceNormal` comes from `Box3D.getFaceNormal(faceIndex)`, which cross-products
+the face's own (already-rotated) edge vectors and flips the result if needed
+so it points away from `getWorldGeometricCenter()` — necessary because
+`FACE_IDX`'s vertex winding is not consistently outward across all 6 faces.
+
 ---
 
 ## Persisted Settings

@@ -6,46 +6,76 @@
     "bisection_iterations": 10,
     "enabled": true
   },
+  "FacePattern": {
+    "line_length_random": 60,
+    "lines_per_face": 20,
+    "vertical_bias": 0,
+    "seed": 1,
+    "line_length_min": 30,
+    "apply_bottom": false,
+    "apply_sides": true,
+    "apply_top": false,
+    "Shading": {
+      "density_amount": 1,
+      "light_yaw": 45,
+      "power": 1,
+      "enabled": false,
+      "light_pitch": -45
+    },
+    "enabled": false
+  },
   "Style": {
     "backgroundColor": -16777216,
     "lineColor": -1,
     "lineWidth": 1.0833333730697632
   },
   "Page": {
+    "clip_landscape": false,
     "clipping": true,
     "clip_width": 800,
     "margin": 0,
+    "clip_aspect_ratio": 0,
     "clip_height": 600,
     "paper_format": 1,
     "global_scale": 1
   },
   "Camera": {
-    "target_x": -140.12875366210938,
+    "target_x": -269.05828857421875,
     "target_distance": 2179.780029296875,
-    "target_y": 76.17019653320312,
-    "target_z": -111.14584350585938,
+    "target_y": -455.66607666015625,
+    "target_z": 494.054931640625,
     "projection_mode": 0,
     "ortho_zoom": 0.3160000145435333,
-    "pitch": -0.5257964134216309,
+    "pitch": -0.35579627752304077,
     "fov": 55.333335876464844,
-    "yaw": 2.0599987506866455
+    "yaw": 2.5499982833862305
   },
   "Boxes": {
     "random_seed": 160000,
     "Tube": {
-      "box_size": 43.79999923706055,
-      "box_count": 108,
       "base_y_min": -1240,
+      "box_multiplier": 1,
+      "box_size": 43.79999923706055,
       "radius_max": 600,
       "base_y_max": 920,
       "radius_min": 1412.699951171875,
       "box_length_max": 1509.13330078125,
+      "box_count": 108,
       "box_length_min": 2000
     },
     "Grid": {
+      "random_size": 58.000003814697266,
+      "random_h": 0,
       "spacing": 364.9000244140625,
       "box_height": 1000,
-      "count": 3720
+      "box_size": 32,
+      "perlin_zoom": 0.15000000596046448,
+      "distance_bias": 1,
+      "rotation_y": 19.199996948242188,
+      "count_z": 4,
+      "random_rotation_y": 0,
+      "height_mode": 0,
+      "count_x": 4
     },
     "distribution_mode": 0
   }

@@ -303,6 +303,36 @@ class Box3D extends Mesh
   {
     return sqrt(sq(2 * size_x) + sq(size_y) + sq(2 * size_z));
   }
+
+  // Outward-facing unit normal of one face (FACE_IDX index), in world space (accounts
+  // for the box's rotation, same as getVertices()). Built from a cross product of the
+  // face's own edges, then flipped if needed against the face-center-to-box-center
+  // direction, rather than trusting FACE_IDX's winding directly - that winding is NOT
+  // consistently outward across all 6 faces (see FACE_VERTICAL_IS_V, which already
+  // differs per face for the same reason), so a fixed cross-product order would
+  // silently invert some faces.
+  PVector getFaceNormal(int faceIndex)
+  {
+    PVector[] verts = getVertices();
+    int[] idx = FACE_IDX[faceIndex];
+    PVector c0 = verts[idx[0]];
+    PVector u = PVector.sub(verts[idx[1]], c0);
+    PVector v = PVector.sub(verts[idx[3]], c0);
+
+    PVector normal = u.cross(v);
+    normal.normalize();
+
+    PVector faceCenter = new PVector(0, 0, 0);
+    for (int i = 0; i < 4; i++)
+      faceCenter.add(verts[idx[i]]);
+    faceCenter.div(4);
+
+    PVector outward = PVector.sub(faceCenter, getWorldGeometricCenter());
+    if (normal.dot(outward) < 0)
+      normal.mult(-1);
+
+    return normal;
+  }
 }
 
 

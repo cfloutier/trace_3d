@@ -2,44 +2,53 @@
   "Occlusion": {
     "sample_step_px": 1.25,
     "self_occlusion_eps_scale": 1.0000000474974513E-4,
-    "seam_edges_enabled": true,
+    "seam_edges_enabled": false,
     "bisection_iterations": 10,
     "enabled": true
   },
   "FacePattern": {
-    "line_length_random": 280,
-    "lines_per_face": 175,
-    "vertical_bias": -1.4666664600372314,
-    "seed": 1057860427,
-    "line_length_min": 33.333335876464844,
+    "line_length_random": 60,
+    "lines_per_face": 155,
+    "vertical_bias": 0.9666671752929688,
+    "seed": 1,
+    "line_length_min": 16.666667938232422,
     "apply_bottom": false,
     "apply_sides": true,
-    "apply_top": false,
+    "apply_top": true,
+    "Shading": {
+      "density_amount": 0.8799999952316284,
+      "light_yaw": 114,
+      "power": 3.250000238418579,
+      "enabled": true,
+      "light_pitch": -28.799999237060547
+    },
     "enabled": true
   },
   "Style": {
-    "backgroundColor": -1,
-    "lineColor": -16777216,
-    "lineWidth": 0.7333333492279053
+    "backgroundColor": -16777216,
+    "lineColor": -1,
+    "lineWidth": 1.0833333730697632
   },
   "Page": {
+    "clip_landscape": false,
     "clipping": true,
     "clip_width": 800,
     "margin": 0,
+    "clip_aspect_ratio": 0,
     "clip_height": 600,
     "paper_format": 1,
     "global_scale": 1
   },
   "Camera": {
-    "target_x": -109.56782531738281,
-    "target_distance": 1271.8817138671875,
-    "target_y": -1143.55419921875,
-    "target_z": -120.5826416015625,
+    "target_x": 101.62654113769531,
+    "target_distance": 3202.812255859375,
+    "target_y": -455.66607666015625,
+    "target_z": -52.27762985229492,
     "projection_mode": 1,
-    "ortho_zoom": 0.25085097551345825,
-    "pitch": 0.18420284986495972,
-    "fov": 88.20000457763672,
-    "yaw": 0.8368136882781982
+    "ortho_zoom": 0.3160000145435333,
+    "pitch": -0.4597971439361572,
+    "fov": 55.333335876464844,
+    "yaw": 2.4899981021881104
   },
   "Boxes": {
     "random_seed": 160000,
@@ -55,18 +64,18 @@
       "box_length_min": 2000
     },
     "Grid": {
-      "random_size": 0,
-      "random_h": 1300.0001220703125,
-      "spacing": 37.29999923706055,
-      "box_height": 541.300048828125,
-      "box_size": 7.940000057220459,
+      "random_size": 58.000003814697266,
+      "random_h": 0,
+      "spacing": 364.9000244140625,
+      "box_height": 1000,
+      "box_size": 32,
       "perlin_zoom": 0.15000000596046448,
-      "distance_bias": -1,
-      "rotation_y": 0,
-      "count_z": 49,
-      "random_rotation_y": 146.39999389648438,
-      "height_mode": 3,
-      "count_x": 49
+      "distance_bias": 1,
+      "rotation_y": 19.199996948242188,
+      "count_z": 4,
+      "random_rotation_y": 0,
+      "height_mode": 0,
+      "count_x": 4
     },
     "distribution_mode": 0
   }

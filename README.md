@@ -132,7 +132,18 @@ the visible faces of the Box3D meshes.
 | `apply_sides` / `apply_top` / `apply_bottom` | Which face groups are affected (sides on by default; top/bottom off by default) |
 | `seed` | Dedicated seed for the pattern, independent of `random_seed` (Meshes) — lets you reroll the lines without changing the box layout (the "Seed" button draws a new one) |
 
-For the algorithm details (2nd ray-casting pass), see [DEVELOPMENT.md](DEVELOPMENT.md).
+### Shading (optional)
+
+When enabled, faces facing the light get sparser lines and faces facing away
+get denser ones, instead of every face using the same `lines_per_face`.
+
+| Parameter | Role |
+|-----------|------|
+| `Enable Shading` | Turns the effect on/off — off leaves every face at the plain `lines_per_face` count |
+| `Light Yaw` / `Light Pitch` | Direction the light comes from, as two angles (degrees) |
+| `Power` | Light intensity — higher pushes more faces toward fully lit (sparse) faster; combined with `lines_per_face` this is enough control over the effect's strength |
+
+For the algorithm details (2nd ray-casting pass, shading formulas), see [DEVELOPMENT.md](DEVELOPMENT.md).
 
 ## Style
 
@@ -184,6 +195,9 @@ For architecture details, persisted settings, and the build procedure, see [DEVE
 ---
 
 ## Changelog
+
+### 2026-08-21
+- **Pattern shading**: the Pattern tab gained an optional shading pass — a directional light (Light Yaw/Pitch + Power) makes lit faces get sparser hachure lines and shaded faces get denser ones, with a Density Amount slider to control how strongly this applies. Off by default (unchanged behavior).
 
 ### 2026-08-19 — xLib 3.13.4
 - **File picker**: Load/Save as... now use a built-in file browser (folders + files under `Settings/`) instead of the system dialog, which could open behind the main window on this sketch (P3D/JOGL renderer).

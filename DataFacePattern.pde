@@ -5,6 +5,7 @@ class DataFacePattern extends GenericData
   DataFacePattern()
   {
     super("FacePattern");
+    addChapter(shading);
   }
 
   boolean enabled = false;
@@ -21,6 +22,8 @@ class DataFacePattern extends GenericData
   boolean apply_bottom = false;
   int seed = 1;
 
+  ShadingData shading = new ShadingData();
+
   void LoadJson(JSONObject src)
   {
     if (src == null) return;
@@ -33,6 +36,7 @@ class DataFacePattern extends GenericData
     apply_top = src.getBoolean("apply_top", apply_top);
     apply_bottom = src.getBoolean("apply_bottom", apply_bottom);
     seed = src.getInt("seed", seed);
+    shading.LoadJson(src.getJSONObject(shading.chapter_name));
 
     changed = true;
   }
@@ -49,6 +53,7 @@ class DataFacePattern extends GenericData
     dest.setBoolean("apply_top", apply_top);
     dest.setBoolean("apply_bottom", apply_bottom);
     dest.setInt("seed", seed);
+    dest.setJSONObject(shading.chapter_name, shading.SaveJson());
     return dest;
   }
 }
@@ -57,6 +62,7 @@ class DataFacePattern extends GenericData
 class FacePatternGUI extends GUIPanel
 {
   DataFacePattern facepattern;
+  ShadingGUI shading_ui;
 
   Toggle enabled;
   Slider lines_per_face;
@@ -71,6 +77,7 @@ class FacePatternGUI extends GUIPanel
   {
     super("Pattern", facepattern);
     this.facepattern = facepattern;
+    this.shading_ui = new ShadingGUI(facepattern.shading);
   }
 
   void setSeed()
@@ -86,6 +93,8 @@ class FacePatternGUI extends GUIPanel
 
     enabled = addToggle("enabled", "Enable Pattern", facepattern);
     nextLine();
+
+    shading_ui.setupControls(this);
 
     lines_per_face = addIntSlider("lines_per_face", "Lines / Face", facepattern, 1, 300);
     nextLine();
@@ -115,9 +124,11 @@ class FacePatternGUI extends GUIPanel
     apply_sides.setValue(facepattern.apply_sides);
     apply_top.setValue(facepattern.apply_top);
     apply_bottom.setValue(facepattern.apply_bottom);
+    shading_ui.setGUIValues();
   }
 
   void update_ui()
   {
+    shading_ui.update_ui();
   }
 }
