@@ -581,22 +581,20 @@ class LineBuilder implements BVH3DRayTest
     Box3D box = occluders.get(boxIndex).box;
 
     // Optional shading: darker faces (facing away from the light) keep more lines,
-    // brighter ones get fewer - computed here, before generation, so the pattern
-    // generator itself stays unaware shading exists (any future pattern type can
-    // reuse the same effectiveLinesPerFace step).
-    int effectiveLinesPerFace = data.facepattern.lines_per_face;
+    // brighter ones get fewer - computed here, before generation, so the multiplier's
+    // meaning is shared across pattern types even though each applies it to its own
+    // density parameter (line count, spacing, ...) differently.
+    float shadingMultiplier = 1;
     if (data.facepattern.shading.enabled)
     {
       PVector faceNormal = box.getFaceNormal(faceIndex);
       PVector lightDir = computeLightDirection(data.facepattern.shading.light_yaw, data.facepattern.shading.light_pitch);
       float brightness = computeFaceBrightness(faceNormal, lightDir, data.facepattern.shading.power);
-      effectiveLinesPerFace = applyShadingToLineCount(data.facepattern.lines_per_face, brightness);
+      shadingMultiplier = computeShadingDensityMultiplier(brightness);
     }
 
     ArrayList<FacePatternWorldEdge> worldScratch = new ArrayList<FacePatternWorldEdge>();
-    generateFacePatternWorldEdges(box, boxIndex, faceIndex, data.facepattern.seed,
-      effectiveLinesPerFace, data.facepattern.line_length_min,
-      data.facepattern.line_length_random, data.facepattern.vertical_bias, worldScratch);
+    data.facepattern.generateWorldEdges(box, boxIndex, faceIndex, shadingMultiplier, worldScratch);
 
     PVector[] outWorld = new PVector[2];
     ProjectedPoint[] outProjected = new ProjectedPoint[2];

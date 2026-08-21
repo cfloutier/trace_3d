@@ -23,10 +23,11 @@ float computeFaceBrightness(PVector faceNormal, PVector lightDir, float power)
   return constrain(raw * power, 0, 1);
 }
 
-// Maps a base line count down according to face brightness: darker faces stay closer
-// to linesPerFace, brighter faces get fewer lines, down to 0 at brightness 1.
-int applyShadingToLineCount(int linesPerFace, float brightness)
+// Density multiplier in [0,1] for a face's brightness: 1 = no shading effect (full
+// base density), 0 = fully lit, no lines at all. Shared by every pattern type - each
+// applies it to its own density parameter (line count, spacing, ...) itself, since
+// that mapping is representation-specific.
+float computeShadingDensityMultiplier(float brightness)
 {
-  float multiplier = constrain(1.0 - brightness, 0, 1);
-  return round(linesPerFace * multiplier);
+  return constrain(1.0 - brightness, 0, 1);
 }

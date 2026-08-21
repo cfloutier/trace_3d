@@ -1,41 +1,71 @@
 import controlP5.*;
 
+abstract class PatternTypeData extends GenericData
+{
+  PatternTypeData(String chapter_name)
+  {
+    super(chapter_name);
+  }
+
+  abstract void generateWorldEdges(Box3D box, int boxIndex, int faceIndex, int patternSeed,
+    float shadingMultiplier, ArrayList<FacePatternWorldEdge> out);
+}
+
 class DataFacePattern extends GenericData
 {
+  static final int TYPE_RANDOM_LINES = 0;
+  static final int TYPE_HACHURES = 1;
+
   DataFacePattern()
   {
     super("FacePattern");
+    addChapter(random_lines);
+    addChapter(hachures);
     addChapter(shading);
   }
 
   boolean enabled = false;
-  int lines_per_face = 20;
-  // Actual line length = line_length_min + random(0, line_length_random), clamped to
-  // the face's own vertical extent (see generateFacePatternWorldEdges).
-  float line_length_min = 30;
-  float line_length_random = 60;
-  // -1 = lines pushed toward the bottom of the face, 0 = evenly distributed,
-  // 1 = pushed toward the top (see generateFacePatternWorldEdges).
-  float vertical_bias = 0;
+  int pattern_type = TYPE_RANDOM_LINES;
   boolean apply_sides = true;
   boolean apply_top = false;
   boolean apply_bottom = false;
   int seed = 1;
 
+  RandomLinesData random_lines = new RandomLinesData();
+  HachuresData hachures = new HachuresData();
   ShadingData shading = new ShadingData();
+
+  void generateWorldEdges(Box3D box, int boxIndex, int faceIndex, float shadingMultiplier,
+    ArrayList<FacePatternWorldEdge> out)
+  {
+    if (pattern_type == TYPE_HACHURES)
+      hachures.generateWorldEdges(box, boxIndex, faceIndex, seed, shadingMultiplier, out);
+    else
+      random_lines.generateWorldEdges(box, boxIndex, faceIndex, seed, shadingMultiplier, out);
+  }
 
   void LoadJson(JSONObject src)
   {
     if (src == null) return;
     enabled = src.getBoolean("enabled", enabled);
-    lines_per_face = src.getInt("lines_per_face", lines_per_face);
-    line_length_min = src.getFloat("line_length_min", line_length_min);
-    line_length_random = src.getFloat("line_length_random", line_length_random);
-    vertical_bias = src.getFloat("vertical_bias", vertical_bias);
+    pattern_type = src.getInt("pattern_type", pattern_type);
     apply_sides = src.getBoolean("apply_sides", apply_sides);
     apply_top = src.getBoolean("apply_top", apply_top);
     apply_bottom = src.getBoolean("apply_bottom", apply_bottom);
     seed = src.getInt("seed", seed);
+
+    // Pre-multi-pattern settings files saved lines_per_face/line_length_min/
+    // line_length_random/vertical_bias flat, at this same level, instead of nested
+    // under a "RandomLines" chapter - fall back to the outer object itself so those
+    // still load instead of silently resetting to defaults. Safe: RandomLinesData's
+    // reflection-based LoadJson only reads the field names it declares, ignoring
+    // unrelated keys (seed, apply_sides, Shading, ...) present in the outer object.
+    JSONObject randomLinesJson = src.getJSONObject(random_lines.chapter_name);
+    if (randomLinesJson == null)
+      randomLinesJson = src;
+    random_lines.LoadJson(randomLinesJson);
+
+    hachures.LoadJson(src.getJSONObject(hachures.chapter_name));
     shading.LoadJson(src.getJSONObject(shading.chapter_name));
 
     changed = true;
@@ -45,14 +75,13 @@ class DataFacePattern extends GenericData
   {
     JSONObject dest = new JSONObject();
     dest.setBoolean("enabled", enabled);
-    dest.setInt("lines_per_face", lines_per_face);
-    dest.setFloat("line_length_min", line_length_min);
-    dest.setFloat("line_length_random", line_length_random);
-    dest.setFloat("vertical_bias", vertical_bias);
+    dest.setInt("pattern_type", pattern_type);
     dest.setBoolean("apply_sides", apply_sides);
     dest.setBoolean("apply_top", apply_top);
     dest.setBoolean("apply_bottom", apply_bottom);
     dest.setInt("seed", seed);
+    dest.setJSONObject(random_lines.chapter_name, random_lines.SaveJson());
+    dest.setJSONObject(hachures.chapter_name, hachures.SaveJson());
     dest.setJSONObject(shading.chapter_name, shading.SaveJson());
     return dest;
   }
@@ -63,12 +92,11 @@ class FacePatternGUI extends GUIPanel
 {
   DataFacePattern facepattern;
   ShadingGUI shading_ui;
+  RandomLinesGUI random_lines_ui;
+  HachuresGUI hachures_ui;
 
   Toggle enabled;
-  Slider lines_per_face;
-  Slider line_length_min;
-  Slider line_length_random;
-  Slider vertical_bias;
+  myRadioButton pattern_type;
   Toggle apply_sides;
   Toggle apply_top;
   Toggle apply_bottom;
@@ -78,6 +106,8 @@ class FacePatternGUI extends GUIPanel
     super("Pattern", facepattern);
     this.facepattern = facepattern;
     this.shading_ui = new ShadingGUI(facepattern.shading);
+    this.random_lines_ui = new RandomLinesGUI(facepattern.random_lines);
+    this.hachures_ui = new HachuresGUI(facepattern.hachures);
   }
 
   void setSeed()
@@ -96,14 +126,18 @@ class FacePatternGUI extends GUIPanel
 
     shading_ui.setupControls(this);
 
-    lines_per_face = addIntSlider("lines_per_face", "Lines / Face", facepattern, 1, 300);
+    ArrayList<String> pattern_types = new ArrayList<String>();
+    pattern_types.add("Random Lines");
+    pattern_types.add("Hachures");
+    pattern_type = addRadio("pattern_type", pattern_types);
     nextLine();
 
-    line_length_min = addSlider("line_length_min", "Length Min", facepattern, 0, 1000);
-    line_length_random = addSlider("line_length_random", "Length Random", facepattern, 0, 1000);
+    float start_y_pos = yPos;
+    random_lines_ui.setupControls(this);
     nextLine();
-
-    vertical_bias = addSlider("vertical_bias", "Vertical Bias", facepattern, -5, 5);
+    // reset y pos for each pattern type, same as BoxesGUI does for grid/tube
+    yPos = start_y_pos;
+    hachures_ui.setupControls(this);
     nextLine();
 
     apply_sides = addToggle("apply_sides", "Sides", facepattern);
@@ -114,21 +148,32 @@ class FacePatternGUI extends GUIPanel
     addButton("Seed").plugTo(this, "setSeed");
   }
 
+  void updatePatternTypeVisibility()
+  {
+    boolean is_random_lines = facepattern.pattern_type == DataFacePattern.TYPE_RANDOM_LINES;
+    random_lines_ui.setVisible(is_random_lines);
+    hachures_ui.setVisible(!is_random_lines);
+  }
+
   void setGUIValues()
   {
     enabled.setValue(facepattern.enabled);
-    lines_per_face.setValue(facepattern.lines_per_face);
-    line_length_min.setValue(facepattern.line_length_min);
-    line_length_random.setValue(facepattern.line_length_random);
-    vertical_bias.setValue(facepattern.vertical_bias);
+    if ((int)pattern_type.getValue() != facepattern.pattern_type)
+      pattern_type.activate(facepattern.pattern_type);
+    random_lines_ui.setGUIValues();
+    hachures_ui.setGUIValues();
     apply_sides.setValue(facepattern.apply_sides);
     apply_top.setValue(facepattern.apply_top);
     apply_bottom.setValue(facepattern.apply_bottom);
     shading_ui.setGUIValues();
+    updatePatternTypeVisibility();
   }
 
   void update_ui()
   {
+    if ((int)pattern_type.getValue() != facepattern.pattern_type)
+      pattern_type.activate(facepattern.pattern_type);
+    updatePatternTypeVisibility();
     shading_ui.update_ui();
   }
 }

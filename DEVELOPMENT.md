@@ -25,13 +25,17 @@ Main files:
 - DataGlobal.pde: aggregates the data chapters.
 - DataGUI.pde: tab GUI + mouse interactions.
 - DataOcclusion.pde: HLR parameters + Occlusion UI.
-- DataFacePattern.pde: parameters + UI for the face hatching pattern (Pattern tab).
+- DataFacePattern.pde: `PatternTypeData` base, pattern-type routing data+UI (Pattern tab).
+- RandomLines.pde: data+UI for the Random Lines pattern type.
+- Hachures.pde: data+UI for the Hachures pattern type.
+- Shading.pde: data+UI for the optional pattern shading (light direction/power).
 - xlib3d_Mesh.pde: Mesh abstraction + projected primitives (EdgeProjected, OccluderBox).
 - xlib3d_Box3D.pde: box-to-edges/faces decomposition (EDGE_IDX, FACE_IDX,
-  EDGE_TO_FACES/FACE_TO_EDGES), ray-box intersection (OBB, slab method).
+  EDGE_TO_FACES/FACE_TO_EDGES), ray-box intersection (OBB, slab method), face normals.
 - xlib3d_BVH3D.pde: generic BVH (spatial broad-phase) for "any-hit" ray queries and AABB overlap queries.
 - xlib3d_BoxIntersection.pde: computes seam edges between overlapping boxes.
-- xlib3d_FacePattern.pde: geometric generation of hatching lines on a box face.
+- xlib3d_FacePattern.pde: geometric generation for each pattern type (Random Lines, Hachures) on a box face.
+- xlib3d_Shading.pde: pure math for light direction/brightness/density-multiplier.
 - xlib3d_Camera3D.pde / xlib3d_CameraData.pde: camera projection + UI + screen->world deprojection.
 
 Working objects:
@@ -76,48 +80,98 @@ costly on scenes with many overlaps, hence the option being off by default.
 
 ## Face Pattern — algorithm
 
-Pattern tab (only useful when Occlusion.enabled): adds vertical hatching lines on
-the visible faces of the Box3D meshes, reusing the HLR pipeline.
+Pattern tab (only useful when Occlusion.enabled): draws marks on the visible
+faces of the Box3D meshes, reusing the HLR pipeline. Multiple pattern *types*
+are supported (Random Lines, Hachures today), composed exactly the way
+Grid/Tube are composed into `DataBoxes`/`BoxesGUI`
+(`MeshDistribution.pde`/`GridDistribution.pde`/`TubeDistribution.pde`):
+`DataFacePattern` (`DataFacePattern.pde`) owns a `PatternTypeData` subchapter
+per type (`RandomLinesData` in `RandomLines.pde`, `HachuresData` in
+`Hachures.pde`) plus an `int pattern_type` selecting which one is active, and
+dispatches to it via `DataFacePattern.generateWorldEdges()`. `FacePatternGUI`
+mirrors this with a `pattern_type` radio and one `*GUI` per type, shown/hidden
+by `updatePatternTypeVisibility()` (same idiom as
+`BoxesGUI.updateDistributionVisibility()`).
 
-How it works (2nd pass, after normal occlusion):
+Visibility pipeline (2nd pass, after normal occlusion), shared by every
+pattern type:
 1. During the 1st pass (box edges), any edge that produces at least one actually
    visible segment is recorded (edgeHasVisibleSegment).
 2. At the end of that pass, a face is considered visible if at least 2 of its 4
    bordering edges were recorded this way (a single edge graze isn't enough).
 3. For each visible face belonging to an active group (sides / top / bottom),
-   vertical lines are centered on a random point on the face's surface (random
-   along the face's horizontal axis AND its own vertical axis — not the screen
-   vertical) and extend from that point both up and down, by a random length
-   (line_length_min + a random value in [0, line_length_random]); if a line would
-   overflow the top or bottom of the face, it is clipped to the face's boundary
-   (so it ends up shorter than intended for a point drawn near an edge). Everything
-   then goes through the same visibility ray-casting as the normal edges.
+   `LineBuilder.appendFacePatternEdges()` computes the shading multiplier (see
+   below) and calls `DataFacePattern.generateWorldEdges()`, which delegates to
+   the active type's own generator in `xlib3d_FacePattern.pde`. The resulting
+   segments go through the same visibility ray-casting as the normal edges.
 
 Partial recompute: changing only a Pattern parameter does not re-run the
 (expensive) edge/seam occlusion pass — only the pattern lines are regenerated, as
 long as Meshes/Camera/Occlusion haven't changed in the meantime.
 
+### Per-face local basis and rect clipping
+
+Both generators work in a face's own local 2D basis: `acrossDir`/`acrossLen`
+(the face's local "horizontal" axis) and `spanDir`/`spanLen` (its local
+"vertical" axis, `FACE_VERTICAL_IS_V`, always bottom→top) — derived from the
+face's own (already-rotated) edge vectors, same as before. A candidate segment
+is built in this local (s,t) space and clipped to the face rectangle via the
+**shared** `clipLineToCenteredRect()` (`xLib_ClippingUtils.pde`, already used
+by spiral/image_processor/perlin_mountains for page clipping), called with
+`centerX=acrossLen/2, centerY=spanLen/2, clipWidth=acrossLen, clipHeight=spanLen`
+— then mapped back to world via `localToWorld(c0, acrossDir, spanDir, s, t)`.
+Reusing this instead of a manual per-axis clamp is what makes an arbitrary
+`orientation` tractable: the clip handles any angle correctly, and at
+`orientation=0` it reduces to exactly the old 1D vertical-extent clamp.
+
+### Random Lines (`RandomLines.pde` + `generateRandomLinesWorldEdges()`)
+
+For each of `lines_per_face` (scaled by the shading multiplier) lines: a
+center point is drawn uniform across `acrossDir` and biased along `spanDir`
+per `vertical_bias` (power-law skew on a uniform draw, always via an
+exponent ≤ 1 so both bias directions concentrate equally strongly — mirrored
+for negative bias rather than using an exponent > 1 directly, which left a
+visibly loose "leftover" fraction of lines near the opposite end). A segment
+of length `line_length_min + random(0, line_length_random)` is then grown from
+that center along `orientation` degrees from `spanDir` (0 = vertical, 90 =
+horizontal) and clipped to the face.
+
+### Hachures (`Hachures.pde` + `generateHachuresWorldEdges()`)
+
+Fully deterministic, no per-line randomness. Projects the face rectangle's 4
+corners onto the axis perpendicular to the line direction to find the offset
+range needed to cover the whole face, then steps through that range by the
+(shading-adjusted) spacing, each step producing an over-long segment through
+the rectangle at that offset, clipped to the face by the same shared helper —
+so exact coverage at any angle falls out of the clip, with no separate
+per-angle geometry needed.
+
 ### Shading
 
-Optional, computed in `LineBuilder.appendFacePatternEdges()` before calling
-`generateFacePatternWorldEdges()` — the generator itself stays unaware shading
-exists, so any future pattern type can reuse the same step. Implemented in
-`xlib3d_Shading.pde` (pure math) and `Shading.pde` (`ShadingData`/`ShadingGUI`,
-composed into `DataFacePattern`/`FacePatternGUI` the same way Grid/Tube are
-composed into `DataBoxes`/`BoxesGUI`):
+Optional, computed once in `LineBuilder.appendFacePatternEdges()` before
+dispatching to the active pattern type — the *meaning* of the multiplier (1 =
+full base density, 0 = none) is shared, but each type applies it to its own
+density parameter itself (that mapping is that type's job, not shading's).
+Implemented in `xlib3d_Shading.pde` (pure math) and `Shading.pde`
+(`ShadingData`/`ShadingGUI`, composed into `DataFacePattern`/`FacePatternGUI`
+the same way the pattern-type subchapters are):
 
 ```
 lightDir   = computeLightDirection(light_yaw, light_pitch)   // same yaw/pitch
                                                                // convention as
                                                                // CameraData
 brightness = clamp(dot(faceNormal, lightDir) * power, 0, 1)  // Lambertian, power = light intensity
-multiplier = clamp(1 - brightness, 0, 1)
-effectiveLinesPerFace = round(lines_per_face * multiplier)
+multiplier = computeShadingDensityMultiplier(brightness)     // = clamp(1 - brightness, 0, 1)
 ```
+- Random Lines: `effectiveLinesPerFace = round(lines_per_face * multiplier)`.
+- Hachures: `effectiveSpacing = line_spacing / multiplier` (spacing grows,
+  i.e. sparser, as the multiplier shrinks), or no lines at all once the
+  multiplier drops below a small floor (avoids spacing blowing up toward
+  infinity).
 
 No separate density-strength slider: `power` (how bright the light gets) and
-`lines_per_face` (the base count it scales down from) already give enough
-control over how strong the effect looks.
+each type's own density parameter already give enough control over how strong
+the effect looks.
 
 `faceNormal` comes from `Box3D.getFaceNormal(faceIndex)`, which cross-products
 the face's own (already-rotated) edge vectors and flips the result if needed

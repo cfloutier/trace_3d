@@ -119,31 +119,50 @@ For the algorithm details (ray-casting, BVH, bisection, seam edges), see [DEVELO
 
 ## Face Pattern
 
-Pattern tab (only useful when Occlusion.enabled): adds vertical hatching lines on
-the visible faces of the Box3D meshes.
+Pattern tab (only useful when Occlusion.enabled): draws marks on the visible
+faces of the Box3D meshes, in one of two selectable styles.
 
 | Parameter | Role |
 |-----------|------|
 | `enabled` | Enables/disables the pattern |
+| Type radio | Chooses the pattern style: Random Lines or Hachures |
+| `apply_sides` / `apply_top` / `apply_bottom` | Which face groups are affected (sides on by default; top/bottom off by default) |
+| `seed` | Dedicated seed for the pattern, independent of `random_seed` (Meshes) — lets you reroll the lines without changing the box layout (the "Seed" button draws a new one); only used by Random Lines, ignored by Hachures |
+
+### Random Lines
+
+Variable-length lines at random positions on the face.
+
+| Parameter | Role |
+|-----------|------|
 | `lines_per_face` | Number of lines generated per visible face (can go high, e.g. 200-300, depending on desired density) |
 | `line_length_min` | Minimum line length |
 | `line_length_random` | Additional random length (0 to this value), added to `line_length_min` |
-| `vertical_bias` | Biases the vertical position of the lines' center point on the face (negative = toward the bottom, 0 = even distribution, positive = toward the top) |
-| `apply_sides` / `apply_top` / `apply_bottom` | Which face groups are affected (sides on by default; top/bottom off by default) |
-| `seed` | Dedicated seed for the pattern, independent of `random_seed` (Meshes) — lets you reroll the lines without changing the box layout (the "Seed" button draws a new one) |
+| `vertical_bias` | Biases the position of the lines' center point along the face's true vertical axis (negative = toward the bottom, 0 = even distribution, positive = toward the top) — independent of `orientation` |
+| `orientation` | Angle of the lines within the face plane (0–180°): 0 = vertical, 90 = horizontal |
+
+### Hachures
+
+Regular, evenly-spaced lines spanning the full face — no randomness.
+
+| Parameter | Role |
+|-----------|------|
+| `line_spacing` | World-space distance between successive lines (smaller = denser) |
+| `orientation` | Angle of the lines within the face plane (0–180°): 0 = vertical, 90 = horizontal |
 
 ### Shading (optional)
 
 When enabled, faces facing the light get sparser lines and faces facing away
-get denser ones, instead of every face using the same `lines_per_face`.
+get denser ones, in whichever pattern type is active — a line-count reduction
+for Random Lines, a spacing increase for Hachures.
 
 | Parameter | Role |
 |-----------|------|
-| `Enable Shading` | Turns the effect on/off — off leaves every face at the plain `lines_per_face` count |
+| `Enable Shading` | Turns the effect on/off — off leaves every face at the plain base density |
 | `Light Yaw` / `Light Pitch` | Direction the light comes from, as two angles (degrees) |
-| `Power` | Light intensity — higher pushes more faces toward fully lit (sparse) faster; combined with `lines_per_face` this is enough control over the effect's strength |
+| `Power` | Light intensity — higher pushes more faces toward fully lit (sparse) faster; combined with the active pattern's density parameter this is enough control over the effect's strength |
 
-For the algorithm details (2nd ray-casting pass, shading formulas), see [DEVELOPMENT.md](DEVELOPMENT.md).
+For the algorithm details (2nd ray-casting pass, per-pattern generators, shading formulas), see [DEVELOPMENT.md](DEVELOPMENT.md).
 
 ## Style
 
@@ -197,7 +216,8 @@ For architecture details, persisted settings, and the build procedure, see [DEVE
 ## Changelog
 
 ### 2026-08-21
-- **Pattern shading**: the Pattern tab gained an optional shading pass — a directional light (Light Yaw/Pitch + Power) makes lit faces get sparser hachure lines and shaded faces get denser ones, with a Density Amount slider to control how strongly this applies. Off by default (unchanged behavior).
+- **Pattern types**: the Pattern tab now supports multiple line styles — today's original pattern is now "Random Lines" (gained an `orientation` slider, 0=vertical/90=horizontal, in addition to its existing parameters), and a new "Hachures" style draws regular, evenly-spaced lines instead (density set via a spacing, not a line count). Existing settings files with tuned Random Lines values keep working as-is (auto-migrated on load); re-save to persist them under the new layout.
+- **Pattern shading**: the Pattern tab gained an optional shading pass — a directional light (Light Yaw/Pitch + Power) makes lit faces get sparser lines and shaded faces get denser ones, in whichever pattern type is active. Off by default (unchanged behavior).
 
 ### 2026-08-19 — xLib 3.13.4
 - **File picker**: Load/Save as... now use a built-in file browser (folders + files under `Settings/`) instead of the system dialog, which could open behind the main window on this sketch (P3D/JOGL renderer).
