@@ -7,14 +7,28 @@
     "enabled": true
   },
   "FacePattern": {
-    "line_length_random": 140,
-    "lines_per_face": 44,
-    "vertical_bias": 0,
-    "seed": 1066063869,
-    "line_length_min": 46.66666793823242,
+    "pattern_type": 1,
+    "seed": 2105116186,
     "apply_bottom": false,
     "apply_sides": true,
+    "Hachures": {
+      "orientation": 88.80000305175781,
+      "line_spacing": 12.5600004196167
+    },
     "apply_top": false,
+    "Shading": {
+      "light_yaw": 108,
+      "power": 3.3000001907348633,
+      "enabled": true,
+      "light_pitch": -45
+    },
+    "RandomLines": {
+      "line_length_random": 140,
+      "lines_per_face": 74,
+      "vertical_bias": 0,
+      "orientation": 30,
+      "line_length_min": 46.66666793823242
+    },
     "enabled": true
   },
   "Style": {
@@ -23,18 +37,20 @@
     "lineWidth": 1.0833333730697632
   },
   "Page": {
+    "clip_landscape": true,
     "clipping": true,
     "clip_width": 800,
     "margin": 0,
+    "clip_aspect_ratio": 1,
     "clip_height": 1020,
     "paper_format": 2,
     "global_scale": 1
   },
   "Camera": {
-    "target_x": -430.6811218261719,
+    "target_x": -589.385009765625,
     "target_distance": 3202.816162109375,
     "target_y": -3208.76611328125,
-    "target_z": -801.3497924804688,
+    "target_z": -1078.81298828125,
     "projection_mode": 1,
     "ortho_zoom": 0.25085097551345825,
     "pitch": 0.7442035675048828,
@@ -42,7 +58,7 @@
     "yaw": 0.6168158650398254
   },
   "Boxes": {
-    "random_seed": -547821641,
+    "random_seed": 548917443,
     "Tube": {
       "base_y_min": -1240,
       "box_multiplier": 1,
@@ -57,16 +73,16 @@
     "Grid": {
       "random_size": 22.666667938232422,
       "random_h": 10000,
-      "spacing": 88,
-      "box_height": 541.300048828125,
+      "spacing": 60.70000457763672,
+      "box_height": 435.70001220703125,
       "box_size": 27.079999923706055,
       "perlin_zoom": 0.15000000596046448,
       "distance_bias": -1,
-      "rotation_y": 0,
-      "count_z": 19,
-      "random_rotation_y": 96.60000610351562,
+      "rotation_y": 30.000015258789062,
+      "count_z": 13,
+      "random_rotation_y": 55.79999923706055,
       "height_mode": 3,
-      "count_x": 18
+      "count_x": 17
     },
     "distribution_mode": 0
   }

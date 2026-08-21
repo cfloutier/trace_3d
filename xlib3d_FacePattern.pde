@@ -182,6 +182,13 @@ void generateHachuresWorldEdges(Box3D box, int boxIndex, int faceIndex,
 
   float[] clipped = new float[4];
 
+  // Offsets near +-maxAbsOffset only graze a corner of the rectangle, so the clipped
+  // segment shrinks toward zero length right at the sweep's extremes - without a
+  // floor, that produces a swarm of near-invisible slivers hugging the face's edges.
+  // Scaled to the face itself so it adapts to box size instead of being a fixed
+  // world-unit constant.
+  float minSegmentLen = 0.01 * sqrt(acrossLen * acrossLen + spanLen * spanLen);
+
   for (float offset = -maxAbsOffset; offset <= maxAbsOffset + 1e-4; offset += spacing)
   {
     float baseS = centerS + offset * perpAcross;
@@ -193,6 +200,9 @@ void generateHachuresWorldEdges(Box3D box, int boxIndex, int faceIndex,
     float t1 = baseT + overLength * dirSpan;
 
     if (!clipLineToCenteredRect(s0, t0, s1, t1, centerS, centerT, acrossLen, spanLen, clipped))
+      continue;
+
+    if (dist(clipped[0], clipped[1], clipped[2], clipped[3]) < minSegmentLen)
       continue;
 
     PVector p0 = localToWorld(c0, acrossDir, spanDir, clipped[0], clipped[1]);

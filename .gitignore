@@ -3,3 +3,6 @@ Export/*
 # export_app.ps1 build/release output
 build_*/
 releases/
+
+# personal, per-machine Claude Code settings (permission rules etc.)
+.claude/settings.local.json

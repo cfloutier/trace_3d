@@ -2,7 +2,7 @@
   "Occlusion": {
     "sample_step_px": 1.25,
     "self_occlusion_eps_scale": 1.0000000474974513E-4,
-    "seam_edges_enabled": false,
+    "seam_edges_enabled": true,
     "bisection_iterations": 10,
     "enabled": true
   },
@@ -47,15 +47,15 @@
     "global_scale": 1
   },
   "Camera": {
-    "target_x": 117.4144287109375,
+    "target_x": 7.835519790649414,
     "target_distance": 1986.556640625,
     "target_y": -765.371826171875,
-    "target_z": 60.151611328125,
+    "target_z": 337.1928405761719,
     "projection_mode": 1,
     "ortho_zoom": 0.3160000145435333,
-    "pitch": -0.2897968590259552,
+    "pitch": -0.259796679019928,
     "fov": 55.333335876464844,
-    "yaw": -1.7900025844573975
+    "yaw": -0.20319296419620514
   },
   "Boxes": {
     "random_seed": 160000,
@@ -78,9 +78,9 @@
       "box_size": 32,
       "perlin_zoom": 0.06460000574588776,
       "distance_bias": -0.800000011920929,
-      "rotation_y": 46.80000305175781,
+      "rotation_y": -14.399993896484375,
       "count_z": 17,
-      "random_rotation_y": 9.600000381469727,
+      "random_rotation_y": 63.60000228881836,
       "height_mode": 3,
       "count_x": 12
     },
