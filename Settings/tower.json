@@ -32,8 +32,8 @@
     "enabled": true
   },
   "Style": {
-    "backgroundColor": -16777216,
-    "lineColor": -1,
+    "backgroundColor": -1,
+    "lineColor": -15383712,
     "lineWidth": 1.0833333730697632
   },
   "Page": {
