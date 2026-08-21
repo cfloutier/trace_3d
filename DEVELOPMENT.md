@@ -19,16 +19,16 @@ Only needed to open/edit/run the sketch from source — not needed to just run a
 Main files:
 - trace_3d.pde: main loop, recompute/render orchestration.
 - LineBuilder.pde: 2D line generation (normal + occlusion).
-- MeshDistribution.pde: Meshes mode data+UI and Grid/Tube routing.
-- GridDistribution.pde: Grid mode generation.
-- TubeDistribution.pde: random Tube mode generation.
+- mesh.pde: Meshes mode data+UI and Grid/Tube routing.
+- mesh_grid.pde: Grid mode generation.
+- mesh_tube.pde: random Tube mode generation.
 - DataGlobal.pde: aggregates the data chapters.
 - DataGUI.pde: tab GUI + mouse interactions.
 - DataOcclusion.pde: HLR parameters + Occlusion UI.
-- DataFacePattern.pde: `PatternTypeData` base, pattern-type routing data+UI (Pattern tab).
-- RandomLines.pde: data+UI for the Random Lines pattern type.
-- Hachures.pde: data+UI for the Hachures pattern type.
-- Shading.pde: data+UI for the optional pattern shading (light direction/power).
+- pattern.pde: `PatternTypeData` base, pattern-type routing data+UI (Pattern tab).
+- pattern_random_lines.pde: data+UI for the Random Lines pattern type.
+- pattern_hachures.pde: data+UI for the Hachures pattern type.
+- pattern_shading.pde: data+UI for the optional pattern shading (light direction/power).
 - xlib3d_Mesh.pde: Mesh abstraction + projected primitives (EdgeProjected, OccluderBox).
 - xlib3d_Box3D.pde: box-to-edges/faces decomposition (EDGE_IDX, FACE_IDX,
   EDGE_TO_FACES/FACE_TO_EDGES), ray-box intersection (OBB, slab method), face normals.
@@ -84,10 +84,10 @@ Pattern tab (only useful when Occlusion.enabled): draws marks on the visible
 faces of the Box3D meshes, reusing the HLR pipeline. Multiple pattern *types*
 are supported (Random Lines, Hachures today), composed exactly the way
 Grid/Tube are composed into `DataBoxes`/`BoxesGUI`
-(`MeshDistribution.pde`/`GridDistribution.pde`/`TubeDistribution.pde`):
-`DataFacePattern` (`DataFacePattern.pde`) owns a `PatternTypeData` subchapter
-per type (`RandomLinesData` in `RandomLines.pde`, `HachuresData` in
-`Hachures.pde`) plus an `int pattern_type` selecting which one is active, and
+(`mesh.pde`/`mesh_grid.pde`/`mesh_tube.pde`):
+`DataFacePattern` (`pattern.pde`) owns a `PatternTypeData` subchapter
+per type (`RandomLinesData` in `pattern_random_lines.pde`, `HachuresData` in
+`pattern_hachures.pde`) plus an `int pattern_type` selecting which one is active, and
 dispatches to it via `DataFacePattern.generateWorldEdges()`. `FacePatternGUI`
 mirrors this with a `pattern_type` radio and one `*GUI` per type, shown/hidden
 by `updatePatternTypeVisibility()` (same idiom as
@@ -124,7 +124,7 @@ Reusing this instead of a manual per-axis clamp is what makes an arbitrary
 `orientation` tractable: the clip handles any angle correctly, and at
 `orientation=0` it reduces to exactly the old 1D vertical-extent clamp.
 
-### Random Lines (`RandomLines.pde` + `generateRandomLinesWorldEdges()`)
+### Random Lines (`pattern_random_lines.pde` + `generateRandomLinesWorldEdges()`)
 
 For each of `lines_per_face` (scaled by the shading multiplier) lines: a
 center point is drawn uniform across `acrossDir` and biased along `spanDir`
@@ -136,7 +136,7 @@ of length `line_length_min + random(0, line_length_random)` is then grown from
 that center along `orientation` degrees from `spanDir` (0 = vertical, 90 =
 horizontal) and clipped to the face.
 
-### Hachures (`Hachures.pde` + `generateHachuresWorldEdges()`)
+### Hachures (`pattern_hachures.pde` + `generateHachuresWorldEdges()`)
 
 Fully deterministic, no per-line randomness. Projects the face rectangle's 4
 corners onto the axis perpendicular to the line direction to find the offset
@@ -152,7 +152,7 @@ Optional, computed once in `LineBuilder.appendFacePatternEdges()` before
 dispatching to the active pattern type — the *meaning* of the multiplier (1 =
 full base density, 0 = none) is shared, but each type applies it to its own
 density parameter itself (that mapping is that type's job, not shading's).
-Implemented in `xlib3d_Shading.pde` (pure math) and `Shading.pde`
+Implemented in `xlib3d_Shading.pde` (pure math) and `pattern_shading.pde`
 (`ShadingData`/`ShadingGUI`, composed into `DataFacePattern`/`FacePatternGUI`
 the same way the pattern-type subchapters are):
 
