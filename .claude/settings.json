@@ -17,7 +17,9 @@
       "PowerShell(cd \"C:\\\\dev\\\\claude_sandbox\\\\processing\\\\perlin_mountains\"; powershell -ExecutionPolicy Bypass -File \".\\\\export_app.ps1\" -Zip $false)",
       "Bash(git mv *)",
       "Skill(update-config)",
-      "Skill(update-config:*)"
+      "Skill(update-config:*)",
+      "Read(//c/dev/claude_sandbox/processing/**)",
+      "Bash(find /c/dev/claude_sandbox/processing -iname \"Debug.pde\" -not -path \"*/Processing/*\" -not -path \"*/build_*/*\")"
     ],
     "deny": [
       "Read(//d/**)",

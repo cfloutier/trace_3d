@@ -161,6 +161,7 @@ for Random Lines, a spacing increase for Hachures.
 | `Enable Shading` | Turns the effect on/off — off leaves every face at the plain base density |
 | `Light Yaw` / `Light Pitch` | Direction the light comes from, as two angles (degrees) |
 | `Power` | Light intensity — higher pushes more faces toward fully lit (sparse) faster; combined with the active pattern's density parameter this is enough control over the effect's strength |
+| `Contrast` | Gamma curve reshaping the light response — above 1 accentuates shaded faces (darker/denser), below 1 accentuates lit faces (lighter/sparser), 1 = no change |
 
 For the algorithm details (2nd ray-casting pass, per-pattern generators, shading formulas), see [DEVELOPMENT.md](DEVELOPMENT.md).
 

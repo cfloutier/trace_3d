@@ -14,13 +14,21 @@ PVector computeLightDirection(float yawDeg, float pitchDeg)
 }
 
 // Lambertian-style brightness in [0,1]: how directly faceNormal faces the light.
-// power is the light's own intensity, scaling the raw dot product before clamping -
-// a weak light (power < 1) keeps every face dimmer, a strong light (power > 1) pushes
-// more faces toward fully lit faster.
-float computeFaceBrightness(PVector faceNormal, PVector lightDir, float power)
+// contrast is a gamma curve applied to the raw (unscaled, still in [0,1]) dot product
+// FIRST - >1 pushes mid-tones down toward dark (accentuates shaded faces), <1 pushes
+// them up toward light (accentuates lit faces), 1 = no change. power (the light's
+// intensity) is applied AFTER, and the single clamp to [0,1] happens LAST. Order
+// matters: clamping before contrast (as an earlier version of this did) let any face
+// already pushed to exactly 1 by power get stuck there - pow(1, anything) is always 1
+// - so contrast silently had no effect on saturated faces, and pushing power higher
+// past the point most faces were already saturated had no visible effect either.
+// Shaping (contrast) then exposure (power) then a single final clamp is the standard
+// order for this reason (same as gamma correction before exposure in image pipelines).
+float computeFaceBrightness(PVector faceNormal, PVector lightDir, float power, float contrast)
 {
   float raw = max(0, faceNormal.dot(lightDir));
-  return constrain(raw * power, 0, 1);
+  float shaped = pow(raw, max(0.0001, contrast));
+  return constrain(shaped * power, 0, 1);
 }
 
 // Density multiplier in [0,1] for a face's brightness: 1 = no shading effect (full

@@ -160,7 +160,15 @@ the same way the pattern-type subchapters are):
 lightDir   = computeLightDirection(light_yaw, light_pitch)   // same yaw/pitch
                                                                // convention as
                                                                // CameraData
-brightness = clamp(dot(faceNormal, lightDir) * power, 0, 1)  // Lambertian, power = light intensity
+raw        = max(0, dot(faceNormal, lightDir))                // Lambertian, in [0,1]
+shaped     = pow(raw, contrast)                               // gamma: >1 darkens/densifies
+                                                               // mid-tones, <1 lightens/
+                                                               // sparsens them, 1 = no change
+brightness = clamp(shaped * power, 0, 1)                      // power = light intensity,
+                                                               // applied AFTER contrast so
+                                                               // it can't get stuck at a
+                                                               // pre-clamped 1 (see
+                                                               // computeFaceBrightness())
 multiplier = computeShadingDensityMultiplier(brightness)     // = clamp(1 - brightness, 0, 1)
 ```
 - Random Lines: `effectiveLinesPerFace = round(lines_per_face * multiplier)`.

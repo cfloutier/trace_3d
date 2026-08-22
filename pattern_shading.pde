@@ -16,6 +16,9 @@ class ShadingData extends GenericData
   // [0,1] - see computeFaceBrightness(). Together with lines_per_face (Pattern tab)
   // this is enough control over the effect's strength - no separate density slider.
   float power = 1;
+  // Gamma curve applied to brightness after power: >1 accentuates shaded faces
+  // (darker/denser), <1 accentuates lit faces (lighter/sparser), 1 = no change.
+  float contrast = 1;
 
   // No LoadJson()/SaveJson() override needed here - GenericData's inherited
   // reflection-based versions already handle these plain boolean/float fields
@@ -30,6 +33,7 @@ class ShadingGUI
   Slider light_yaw;
   Slider light_pitch;
   Slider power;
+  Slider contrast;
 
   ShadingGUI(ShadingData shading)
   {
@@ -44,7 +48,9 @@ class ShadingGUI
 
     light_yaw = panel.addSlider("light_yaw", "Light Yaw", shading, -180, 180);
     light_pitch = panel.addSlider("light_pitch", "Light Pitch", shading, -90, 90);
+    panel.nextLine();
     power = panel.addSlider("power", "Power", shading, 0, 5);
+    contrast = panel.addSlider("contrast", "Contrast", shading, 0.2, 5);
     panel.nextLine();
   }
 
@@ -54,6 +60,7 @@ class ShadingGUI
     light_yaw.setValue(shading.light_yaw);
     light_pitch.setValue(shading.light_pitch);
     power.setValue(shading.power);
+    contrast.setValue(shading.contrast);
     updateVisibility();
   }
 
@@ -69,11 +76,13 @@ class ShadingGUI
       light_yaw.show();
       light_pitch.show();
       power.show();
+      contrast.show();
     } else
     {
       light_yaw.hide();
       light_pitch.hide();
       power.hide();
+      contrast.hide();
     }
   }
 }

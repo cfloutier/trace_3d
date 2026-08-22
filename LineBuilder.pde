@@ -654,7 +654,7 @@ class LineBuilder implements BVH3DRayTest
     {
       PVector faceNormal = box.getFaceNormal(faceIndex);
       PVector lightDir = computeLightDirection(data.facepattern.shading.light_yaw, data.facepattern.shading.light_pitch);
-      float brightness = computeFaceBrightness(faceNormal, lightDir, data.facepattern.shading.power);
+      float brightness = computeFaceBrightness(faceNormal, lightDir, data.facepattern.shading.power, data.facepattern.shading.contrast);
       shadingMultiplier = computeShadingDensityMultiplier(brightness);
     }
 
