@@ -8,7 +8,7 @@ abstract class PatternTypeData extends GenericData
   }
 
   abstract void generateWorldEdges(Box3D box, int boxIndex, int faceIndex, int patternSeed,
-    float shadingMultiplier, ArrayList<FacePatternWorldEdge> out);
+    float shadingMultiplier, PVector cameraPos, ArrayList<FacePatternWorldEdge> out);
 }
 
 class DataFacePattern extends GenericData
@@ -36,12 +36,12 @@ class DataFacePattern extends GenericData
   ShadingData shading = new ShadingData();
 
   void generateWorldEdges(Box3D box, int boxIndex, int faceIndex, float shadingMultiplier,
-    ArrayList<FacePatternWorldEdge> out)
+    PVector cameraPos, ArrayList<FacePatternWorldEdge> out)
   {
     if (pattern_type == TYPE_HACHURES)
-      hachures.generateWorldEdges(box, boxIndex, faceIndex, seed, shadingMultiplier, out);
+      hachures.generateWorldEdges(box, boxIndex, faceIndex, seed, shadingMultiplier, cameraPos, out);
     else
-      random_lines.generateWorldEdges(box, boxIndex, faceIndex, seed, shadingMultiplier, out);
+      random_lines.generateWorldEdges(box, boxIndex, faceIndex, seed, shadingMultiplier, cameraPos, out);
   }
 
   void LoadJson(JSONObject src)

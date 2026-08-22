@@ -659,7 +659,7 @@ class LineBuilder implements BVH3DRayTest
     }
 
     ArrayList<FacePatternWorldEdge> worldScratch = new ArrayList<FacePatternWorldEdge>();
-    data.facepattern.generateWorldEdges(box, boxIndex, faceIndex, shadingMultiplier, worldScratch);
+    data.facepattern.generateWorldEdges(box, boxIndex, faceIndex, shadingMultiplier, frame.camera_pos, worldScratch);
 
     PVector[] outWorld = new PVector[2];
     ProjectedPoint[] outProjected = new ProjectedPoint[2];

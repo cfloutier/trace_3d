@@ -149,6 +149,7 @@ Regular, evenly-spaced lines spanning the full face — no randomness.
 |-----------|------|
 | `line_spacing` | World-space distance between successive lines (smaller = denser) |
 | `orientation` | Angle of the lines within the face plane (0–180°): 0 = vertical, 90 = horizontal |
+| `Foreshortening Comp.` | Counteracts perspective making steeply-angled faces look denser than head-on ones (0 = off, 1 = full correction) — Hachures only, since its regular spacing makes the effect obvious in a way Random Lines' irregular placement doesn't |
 
 ### Shading (optional)
 

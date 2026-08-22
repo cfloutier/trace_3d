@@ -146,6 +146,25 @@ the rectangle at that offset, clipped to the face by the same shared helper —
 so exact coverage at any angle falls out of the clip, with no separate
 per-angle geometry needed.
 
+**Foreshortening compensation** (`foreshortening_compensation`, Hachures
+only): a uniform world-space spacing doesn't stay uniform on screen — a face
+seen at a steep/grazing angle compresses that spacing far more than a face
+seen head-on, since the spacing is measured along the local perpendicular
+axis, and that axis's world direction can point anywhere from fully lateral
+(no compression) to nearly straight at/away from the camera (spacing
+collapses toward zero apparent length). The correction:
+```
+perpWorld   = the perpendicular axis (depends on orientation), as a world vector
+sightDir    = normalize(faceCenter - cameraPos)
+alignment   = abs(dot(perpWorld, sightDir))       // 0 = lateral, 1 = aligned with sight line
+foreshorten = sqrt(max(0, 1 - alignment^2))        // 1 = no compression, 0 = maximal
+effective   = lerp(1, foreshorten, compensation)   // compensation in [0,1], 0 = off
+spacing     = spacing / max(0.05, effective)       // widen spacing where compression is worst
+```
+Depends on `orientation` because that's what determines `perpWorld` - the
+same face tilt can need very different compensation (or none) depending on
+which way the hachures run across it.
+
 ### Shading
 
 Optional, computed once in `LineBuilder.appendFacePatternEdges()` before

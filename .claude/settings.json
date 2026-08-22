@@ -19,7 +19,11 @@
       "Skill(update-config)",
       "Skill(update-config:*)",
       "Read(//c/dev/claude_sandbox/processing/**)",
-      "Bash(find /c/dev/claude_sandbox/processing -iname \"Debug.pde\" -not -path \"*/Processing/*\" -not -path \"*/build_*/*\")"
+      "Bash(find /c/dev/claude_sandbox/processing -iname \"Debug.pde\" -not -path \"*/Processing/*\" -not -path \"*/build_*/*\")",
+      "Read(//c//**)",
+      "Read(//c/dev/claude_sandbox/processing/Processing/runtime/**)",
+      "Read(//c/dev/claude_sandbox/processing/Processing/**)",
+      "WebFetch(domain:sojamo.de)"
     ],
     "deny": [
       "Read(//d/**)",

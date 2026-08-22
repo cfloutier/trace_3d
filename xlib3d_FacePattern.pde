@@ -130,8 +130,15 @@ void generateRandomLinesWorldEdges(Box3D box, int boxIndex, int faceIndex, int p
 // `spacing` world units apart (measured perpendicular to the lines) and `orientationDeg`
 // degrees from the true vertical (same convention as generateRandomLinesWorldEdges).
 // Fully deterministic - no randomness, no seed - so the pattern reads as uniform.
+//
+// `compensation` (0..1+, 0 = off) counteracts perspective foreshortening: a face seen
+// at a steep/grazing angle compresses world-space spacing into much less screen-space
+// spacing than a face seen head-on, so hachures at a fixed world spacing look far
+// denser on the former - see the comment above the compensation block below for the
+// derivation. cameraPos is only used for this.
 void generateHachuresWorldEdges(Box3D box, int boxIndex, int faceIndex,
-  float spacing, float orientationDeg, ArrayList<FacePatternWorldEdge> out)
+  float spacing, float orientationDeg, float compensation, PVector cameraPos,
+  ArrayList<FacePatternWorldEdge> out)
 {
   if (spacing < 1e-6)
     return;
@@ -160,6 +167,34 @@ void generateHachuresWorldEdges(Box3D box, int boxIndex, int faceIndex,
   // along by `spacing` to place successive parallel lines.
   float perpAcross = dirSpan;
   float perpSpan = -dirAcross;
+
+  // Foreshortening compensation. A step of world length `spacing` along the local
+  // perpendicular axis projects to screen space scaled by how much that axis's WORLD
+  // direction is aligned with the camera's sight line to this face: fully lateral
+  // (perpendicular to the sight line) projects near 1:1, fully aligned WITH the sight
+  // line (pointing straight at/away from the camera) collapses toward zero apparent
+  // length - that's foreshortening. Depends on `orientationDeg` (it picks which world
+  // direction is "perpendicular" here) as well as the face's own tilt, which is why
+  // orientation has to be part of this, not just a per-face fudge factor.
+  if (compensation > 0)
+  {
+    PVector perpWorld = PVector.add(PVector.mult(acrossDir, perpAcross), PVector.mult(spanDir, perpSpan));
+    PVector faceCenter = box.getFaceCenter(faceIndex);
+    PVector sightDir = PVector.sub(faceCenter, cameraPos);
+    if (sightDir.magSq() > 1e-9)
+    {
+      sightDir.normalize();
+      float alignment = abs(perpWorld.dot(sightDir));
+      // 1 = perpendicular to sight line (no foreshortening), 0 = aligned with it
+      // (maximal foreshortening, apparent spacing -> 0).
+      float foreshorten = sqrt(max(0, 1 - alignment * alignment));
+      float effective = lerp(1, foreshorten, constrain(compensation, 0, 1));
+      // Smaller effective -> more compressed on screen -> widen the world spacing to
+      // compensate. Floored so a near-edge-on face gets very sparse rather than a
+      // division blow-up.
+      spacing = spacing / max(0.05, effective);
+    }
+  }
 
   float centerS = acrossLen * 0.5;
   float centerT = spanLen * 0.5;

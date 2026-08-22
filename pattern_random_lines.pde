@@ -23,8 +23,11 @@ class RandomLinesData extends PatternTypeData
   // 90 = along its horizontal axis.
   float orientation = 0;
 
+  // cameraPos is unused here (only Hachures' foreshortening compensation needs it) -
+  // part of the shared PatternTypeData contract, same as patternSeed being unused by
+  // Hachures.
   void generateWorldEdges(Box3D box, int boxIndex, int faceIndex, int patternSeed,
-    float shadingMultiplier, ArrayList<FacePatternWorldEdge> out)
+    float shadingMultiplier, PVector cameraPos, ArrayList<FacePatternWorldEdge> out)
   {
     int effectiveLinesPerFace = round(lines_per_face * shadingMultiplier);
     generateRandomLinesWorldEdges(box, boxIndex, faceIndex, patternSeed,

@@ -12,14 +12,15 @@
     "apply_bottom": false,
     "apply_sides": true,
     "Hachures": {
-      "orientation": 46.80000305175781,
-      "line_spacing": 7.940000057220459
+      "orientation": 145.1999969482422,
+      "line_spacing": 7.28000020980835,
+      "foreshortening_compensation": 0.8100000023841858
     },
     "apply_top": true,
     "Shading": {
-      "light_yaw": 34.80000305175781,
-      "contrast": 1,
-      "power": 3.250000238418579,
+      "light_yaw": -22.800003051757812,
+      "contrast": 1.5440001487731934,
+      "power": 5,
       "enabled": true,
       "light_pitch": -8.399993896484375
     },
@@ -48,15 +49,15 @@
     "global_scale": 1
   },
   "Camera": {
-    "target_x": 433.5050964355469,
-    "target_distance": 1159.1365966796875,
+    "target_x": -227.64553833007812,
+    "target_distance": 1159.13720703125,
     "target_y": -765.371826171875,
-    "target_z": -188.86569213867188,
+    "target_z": 890.5182495117188,
     "projection_mode": 1,
     "ortho_zoom": 0.3160000145435333,
-    "pitch": -0.459796667098999,
+    "pitch": -0.42979633808135986,
     "fov": 55.333335876464844,
-    "yaw": 2.2436165809631348
+    "yaw": -0.5663818120956421
   },
   "Debug": {
     "min_line_length": 0,
