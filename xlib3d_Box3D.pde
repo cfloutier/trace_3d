@@ -333,6 +333,21 @@ class Box3D extends Mesh
 
     return normal;
   }
+
+  // World-space center of one face (FACE_IDX index) - average of its 4 (already
+  // rotated) vertices. Paired with getFaceNormal() for back-face tests.
+  PVector getFaceCenter(int faceIndex)
+  {
+    PVector[] verts = getVertices();
+    int[] idx = FACE_IDX[faceIndex];
+
+    PVector center = new PVector(0, 0, 0);
+    for (int i = 0; i < 4; i++)
+      center.add(verts[idx[i]]);
+    center.div(4);
+
+    return center;
+  }
 }
 
 

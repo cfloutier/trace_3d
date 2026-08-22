@@ -16,7 +16,7 @@ class DataOcclusion extends GenericData
   // Off by default: pairwise box-box seam detection is O(overlapping pairs x 36 face
   // tests) - cheap for a few overlaps, potentially costly for large, densely-overlapping
   // scenes, so it's opt-in rather than always-on.
-  boolean seam_edges_enabled = false;
+  boolean seam_edges_enabled = true;
 
   void LoadJson(JSONObject src)
   {

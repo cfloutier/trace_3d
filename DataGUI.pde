@@ -9,6 +9,7 @@ class DataGUI extends MainPanel
   CameraGUI camera_ui;
   OcclusionGUI occlusion_ui;
   FacePatternGUI facepattern_ui;
+  DebugGUI debug_ui;
 
   public DataGUI(BoxGridData data)
   {
@@ -19,6 +20,7 @@ class DataGUI extends MainPanel
     camera_ui = new CameraGUI(data.camera);
     occlusion_ui = new OcclusionGUI(data.occlusion);
     facepattern_ui = new FacePatternGUI(data.facepattern);
+    debug_ui = new DebugGUI(data.debug);
   }
 
   void Init()
@@ -29,6 +31,7 @@ class DataGUI extends MainPanel
     addTab(camera_ui);
     addTab(occlusion_ui);
     addTab(facepattern_ui);
+    addTab(debug_ui);
 
     super.Init();
 

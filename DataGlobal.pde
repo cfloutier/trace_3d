@@ -5,6 +5,7 @@ class BoxGridData extends DataGlobal
   CameraData camera = new CameraData();
   DataOcclusion occlusion = new DataOcclusion();
   DataFacePattern facepattern = new DataFacePattern();
+  DataDebug debug = new DataDebug();
 
   BoxGridData()
   {
@@ -13,6 +14,7 @@ class BoxGridData extends DataGlobal
     addChapter(camera);
     addChapter(occlusion);
     addChapter(facepattern);
+    addChapter(debug);
   }
 
   void reset()
@@ -22,5 +24,6 @@ class BoxGridData extends DataGlobal
     camera.CopyFrom(new CameraData());
     occlusion.CopyFrom(new DataOcclusion());
     facepattern.CopyFrom(new DataFacePattern());
+    debug.CopyFrom(new DataDebug());
   }
 }

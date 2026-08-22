@@ -35,6 +35,23 @@ class LineBuilder implements BVH3DRayTest
   // lets requestPatternOnlyRebuild() skip straight to the pattern stages.
   boolean firstPassValid = false;
 
+  // Debug overlay: an X (both diagonals) per face computeFaceVisibility() currently
+  // marks visible, drawn with zero occlusion testing (see draw()) - lets the
+  // visible-face heuristic be checked by eye instead of reasoned about. One group per
+  // Box3D.FACE_IDX index, each drawn in its own color (debugFaceColors) so which face
+  // a stray diagonal belongs to is identifiable at a glance. Gated by the Debug tab's
+  // "Show Face Debug Lines" toggle (data.debug.show_face_debug, see draw()) - kept
+  // permanently as a diagnostic, not meant to be removed.
+  PolylineGroup[] debugFaceGroups = {
+    new PolylineGroup(), new PolylineGroup(), new PolylineGroup(),
+    new PolylineGroup(), new PolylineGroup(), new PolylineGroup()
+  };
+  // Face 0=bottom, 1=top, 2=-Z, 3=+Z, 4=-X, 5=+X (see Box3D.FACE_IDX).
+  color[] debugFaceColors = {
+    color(255, 0, 0), color(0, 255, 0), color(60, 140, 255),
+    color(255, 255, 0), color(255, 0, 255), color(0, 255, 255)
+  };
+
   ArrayList<EdgeProjected> patternEdges = new ArrayList<EdgeProjected>();
   int patternEdgeIndex = 0;
   ArrayList<int[]> patternFaceQueue = new ArrayList<int[]>(); // {boxIndex, faceIndex}
@@ -528,13 +545,18 @@ class LineBuilder implements BVH3DRayTest
       (data.facepattern.apply_sides || data.facepattern.apply_top || data.facepattern.apply_bottom);
   }
 
-  // Derives faceVisible[box][face] from edgeHasVisibleSegment: a face counts as visible
-  // only once at least 2 of its 4 bordering edges showed a visible segment (a single
-  // grazing edge isn't enough - see plan discussion).
+  // Derives faceVisible[box][face] from two independent checks: the edge-occlusion
+  // heuristic (at least 2 of the face's 4 bordering edges showed a visible segment -
+  // catches a face hidden behind ANOTHER box) AND a back-face test (catches a face
+  // oriented away from the camera regardless of what else is in the scene - without
+  // it, an isolated box with nothing to occlude any of its edges had every one of its
+  // 6 faces pass the edge heuristic, including the bottom and the far sides).
   void computeFaceVisibility()
   {
     int n = occluders.size();
     faceVisible = new boolean[n][6];
+    for (int f = 0; f < 6; f++)
+      debugFaceGroups[f].clear();
 
     for (int b = 0; b < n; b++)
     {
@@ -549,9 +571,52 @@ class LineBuilder implements BVH3DRayTest
           if (edgeVis[faceEdges[k]])
             count++;
 
-        faceVisible[b][f] = count >= 2;
+        faceVisible[b][f] = (count >= 2) && isFaceFrontFacing(box, f, frame.camera_pos);
+
+        if (faceVisible[b][f])
+          appendDebugFaceDiagonal(box, f);
       }
     }
+  }
+
+  // True when the camera sits on the outward side of the face (its normal points
+  // roughly toward the camera), i.e. the face isn't turned away from the viewer.
+  boolean isFaceFrontFacing(Box3D box, int faceIndex, PVector cameraPos)
+  {
+    PVector normal = box.getFaceNormal(faceIndex);
+    PVector faceCenter = box.getFaceCenter(faceIndex);
+    return normal.dot(PVector.sub(cameraPos, faceCenter)) > 0;
+  }
+
+  // Debug overlay: projects both of one face's diagonals (both opposite-corner pairs,
+  // an "X") straight to screen, with near-plane clipping only - deliberately skipping
+  // isSampleVisible()/the BVH ray-cast entirely, so they're drawn regardless of what
+  // actually occludes them. Both diagonals (not just one) so the mark reads clearly
+  // as belonging to this face at any viewing angle - a single diagonal can look like
+  // just another edge from some angles. See debugFaceGroups and draw().
+  void appendDebugFaceDiagonal(Box3D box, int faceIndex)
+  {
+    PVector[] verts = box.getVertices();
+    int[] idx = box.FACE_IDX[faceIndex];
+
+    appendDebugFaceLine(verts[idx[0]], verts[idx[2]], faceIndex);
+    appendDebugFaceLine(verts[idx[1]], verts[idx[3]], faceIndex);
+  }
+
+  void appendDebugFaceLine(PVector worldA, PVector worldB, int faceIndex)
+  {
+    ProjectedPoint pa = data.camera.projectPointWithDepth(worldA, frame);
+    ProjectedPoint pb = data.camera.projectPointWithDepth(worldB, frame);
+
+    PVector[] outWorld = new PVector[2];
+    ProjectedPoint[] outProjected = new ProjectedPoint[2];
+    if (!clipSegmentToNearPlane(worldA, pa, worldB, pb, data.camera, frame, outWorld, outProjected))
+      return;
+
+    Polyline line = new Polyline();
+    line.addPoint(new PVector(outProjected[0].x, outProjected[0].y));
+    line.addPoint(new PVector(outProjected[1].x, outProjected[1].y));
+    debugFaceGroups[faceIndex].add(line);
   }
 
   boolean isFaceGroupEnabled(int faceIndex)
@@ -615,8 +680,32 @@ class LineBuilder implements BVH3DRayTest
   void mergeIntoFinalGroup()
   {
     finalGroup.clear();
-    finalGroup.addAll(edgeGroup);
-    finalGroup.addAll(patternGroup);
+    if (data.debug.show_edges)
+      appendFilteredGroup(edgeGroup);
+    if (data.debug.show_patterns)
+      appendFilteredGroup(patternGroup);
+  }
+
+  // Final cleanup filter (Debug tab's "Min Line Length"): drops any line shorter than
+  // data.debug.min_line_length, measured in screen pixels post-projection - lets the
+  // user manually clean up leftover short/sliver marks (e.g. hachures clipped down to
+  // near-nothing near a face edge) regardless of where they came from. 0 = no filtering.
+  void appendFilteredGroup(PolylineGroup source)
+  {
+    float minLen = data.debug.min_line_length;
+    for (Polyline p : source.polylines)
+    {
+      if (minLen <= 0 || polylineLength(p) >= minLen)
+        finalGroup.add(p);
+    }
+  }
+
+  float polylineLength(Polyline p)
+  {
+    float len = 0;
+    for (int i = 0; i < p.size() - 1; i++)
+      len += PVector.dist(p.get(i), p.get(i + 1));
+    return len;
   }
 
   // Casts a line-of-sight ray from worldPoint toward the camera and tests it against the
@@ -713,12 +802,25 @@ class LineBuilder implements BVH3DRayTest
 
     if (showingLiveSubGroups())
     {
-      edgeGroup.draw(clipping, clipWidth, clipHeight);
-      patternGroup.draw(clipping, clipWidth, clipHeight);
+      if (data.debug.show_edges)
+        edgeGroup.draw(clipping, clipWidth, clipHeight);
+      if (data.debug.show_patterns)
+        patternGroup.draw(clipping, clipWidth, clipHeight);
     }
     else if (!busy && finalGroup != null)
     {
       finalGroup.draw(clipping, clipWidth, clipHeight);
+    }
+
+    // See debugFaceGroups/appendDebugFaceDiagonal - drawn last, one color per face,
+    // regardless of occlusion. Gated by the Debug tab's "Show Face Debug Lines" toggle.
+    if (data.debug.show_face_debug)
+    {
+      for (int f = 0; f < 6; f++)
+      {
+        current_graphics.stroke(debugFaceColors[f]);
+        debugFaceGroups[f].draw(clipping, clipWidth, clipHeight);
+      }
     }
 
     popStyle();

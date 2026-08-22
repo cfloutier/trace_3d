@@ -64,6 +64,7 @@ void draw()
   boolean occlusion_changed = data.occlusion.changed;
   boolean facepattern_changed = data.facepattern.changed;
   boolean page_changed   = data.page.changed;
+  boolean debug_changed  = data.debug.changed;
 
   // if (occlusion_changed)
   // {
@@ -85,6 +86,13 @@ void draw()
       lineBuilder.requestBuild(meshList, lineGroup);
     else if (facepattern_changed)
       lineBuilder.requestPatternOnlyRebuild();
+    // show_edges/show_patterns only decide what mergeIntoFinalGroup() includes from
+    // the already-computed edgeGroup/patternGroup - no geometry/occlusion recompute
+    // needed, just re-merge so the toggle takes effect this frame instead of waiting
+    // for the next unrelated rebuild (e.g. moving the camera). show_face_debug isn't
+    // part of this - draw() reads it directly every frame, already instant.
+    else if (debug_changed && !lineBuilder.isBusy())
+      lineBuilder.mergeIntoFinalGroup();
 
     if (!lineBuilder.isBusy())
       hud_last_lines_gen_ms = lineBuilder.getElapsedMs();

@@ -47,15 +47,15 @@
     "global_scale": 1
   },
   "Camera": {
-    "target_x": -65.62236022949219,
-    "target_distance": 1986.556640625,
-    "target_y": -799.0647583007812,
-    "target_z": 594.0281982421875,
+    "target_x": -218.47291564941406,
+    "target_distance": 2502.489501953125,
+    "target_y": -704.3514404296875,
+    "target_z": 54.54847717285156,
     "projection_mode": 1,
     "ortho_zoom": 0.3160000145435333,
-    "pitch": -0.24979688227176666,
+    "pitch": -0.399796724319458,
     "fov": 55.333335876464844,
-    "yaw": -1.9800024032592773
+    "yaw": 0.9699957370758057
   },
   "Boxes": {
     "random_seed": 160000,
@@ -79,10 +79,10 @@
       "perlin_zoom": 0.15000000596046448,
       "distance_bias": 1,
       "rotation_y": 19.199996948242188,
-      "count_z": 17,
+      "count_z": 1,
       "random_rotation_y": 0,
       "height_mode": 0,
-      "count_x": 12
+      "count_x": 1
     },
     "distribution_mode": 0
   }
