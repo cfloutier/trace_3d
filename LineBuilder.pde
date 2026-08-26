@@ -797,7 +797,7 @@ class LineBuilder implements BVH3DRayTest
     if (busy && occlusionMode && !_record)
       preview3D.renderAndComposite(current_graphics, data.camera, sourceMeshes);
 
-    int c = data.style.lineColor.col;
+    int c = data.style.lineColor;
     current_graphics.stroke(red(c), green(c), blue(c), 255);
 
     if (showingLiveSubGroups())

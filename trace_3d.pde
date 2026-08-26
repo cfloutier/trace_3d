@@ -110,7 +110,7 @@ void draw()
   // Debug: draw clipping rect border
   //if (data.page.clipping) {
   //  current_graphics.noFill();
-  //  current_graphics.stroke(data.style.lineColor.col);
+  //  current_graphics.stroke(data.style.lineColor);
   //  current_graphics.rect(-data.page.clip_width / 2, -data.page.clip_height / 2,
   //                         data.page.clip_width, data.page.clip_height);
   //}

@@ -2,7 +2,7 @@
   "Occlusion": {
     "sample_step_px": 1.25,
     "self_occlusion_eps_scale": 1.0000000474974513E-4,
-    "seam_edges_enabled": true,
+    "seam_edges_enabled": false,
     "bisection_iterations": 10,
     "enabled": true
   },
@@ -34,8 +34,8 @@
     "enabled": true
   },
   "Style": {
-    "backgroundColor": -16777216,
-    "lineColor": -1,
+    "backgroundColor": -1,
+    "lineColor": -6596170,
     "lineWidth": 1.0833333730697632
   },
   "Page": {
@@ -49,15 +49,15 @@
     "global_scale": 1
   },
   "Camera": {
-    "target_x": -227.64553833007812,
+    "target_x": 257.1607971191406,
     "target_distance": 1159.13720703125,
     "target_y": -765.371826171875,
-    "target_z": 890.5182495117188,
+    "target_z": -92.50901794433594,
     "projection_mode": 1,
     "ortho_zoom": 0.3160000145435333,
-    "pitch": -0.42979633808135986,
+    "pitch": -0.009999990463256836,
     "fov": 55.333335876464844,
-    "yaw": -0.5663818120956421
+    "yaw": 3.1415927410125732
   },
   "Debug": {
     "min_line_length": 0,

@@ -30,8 +30,8 @@ class NativePreview3D
     // sit closer to the background than before, so the 3D backdrop reads as a dim,
     // clearly secondary layer under the final line color (drawn at full brightness on
     // top of it once STAGE_EMIT starts).
-    int bg = data.style.backgroundColor.col;
-    int line = data.style.lineColor.col;
+    int bg = data.style.backgroundColor;
+    int line = data.style.lineColor;
     target.stroke(lerpColor(bg, line, 1.0 / 3.0));
     target.fill(lerpColor(bg, line, 1.0 / 6.0));
 
