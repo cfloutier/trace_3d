@@ -313,7 +313,7 @@ public class ColorChooserPopup
     // relying on switching tabs.
     okButton = cp5.addButton("colorok")
       .setLabel("OK")
-      .setPosition(_svX, _svY + SV_SIZE + 10)
+      .setPosition(_svX, _svY + SV_SIZE + 30)
       .setSize(90, 20)
       .moveTo("default");
     okButton.plugTo(new OkButton(this), "onClic");

@@ -435,8 +435,10 @@ class GUIPanel implements ControlListener
   // swatch (had to move the mouse away and back to get it to register).
   Button addColorChooser(String name, ColorSetter target)
   {
-    inlineLabel(name, 100);
 
+    yPos += 6;
+
+    inlineLabel(name, 100);
     cp5.addButton("colorchooserframe" + indexControler)
       .setPosition(xPos - 2, yPos - 2)
       .setSize(24, 24)
@@ -455,9 +457,11 @@ class GUIPanel implements ControlListener
     bt.bringToFront();
 
     indexControler++;
-    xPos += 26;
+    xPos += 30;
 
     bt.plugTo(new ColorChooserTrigger(pageName, target, bt), "onClic");
+
+    nextLine();
 
     return bt;
   }

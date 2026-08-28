@@ -1,12 +1,20 @@
 String get_xlib_version()
 {
-  return "4.2.0";
+  return "4.3.0";
 }
 
 
 /*
 
  # CHANGELOG
+
+ ## [4.3.0] - 2026-08-27
+ - Style tab: new "Invert" button swaps Line Color / Background Color (and re-tints both
+ trigger buttons to match).
+
+ ## [4.2.1] - 2026-08-27
+ - Custom mode's OK button given more clearance below the SV square (was crowding the
+ Slider2D's own "0,0" value label right beneath it).
 
  ## [4.2.0] - 2026-08-27
  - Custom mode now has an "OK" button (below the SV square) to close the popup - unlike a
