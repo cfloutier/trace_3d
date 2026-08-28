@@ -28,12 +28,14 @@ class StyleGUI extends GUIPanel
   }
 
   Slider lineWidth;
-  ColorGroup backgroundColor;
-  ColorGroup lineColor;
+  Button backgroundColor;
+  Button lineColor;
 
   void setGUIValues()
   {
     lineWidth.setValue(style.lineWidth);
+    lineColor.setColorBackground(style.lineColor);
+    backgroundColor.setColorBackground(style.backgroundColor);
   }
 
   void setupControls()
@@ -42,12 +44,15 @@ class StyleGUI extends GUIPanel
 
     lineWidth = addSlider("lineWidth", "Line Width", 0, 5);
     nextLine();
-    lineColor = addColorGroup("Line Color", new ColorSetter()
+    lineColor = addColorChooser("Line Color", new ColorSetter()
     {
+      public color getColor() { return style.lineColor; }
       public void setColor(color c) { style.lineColor = c; style.changed = true; }
     });
-    backgroundColor = addColorGroup("background Color", new ColorSetter()
+    nextLine();
+    backgroundColor = addColorChooser("background Color", new ColorSetter()
     {
+      public color getColor() { return style.backgroundColor; }
       public void setColor(color c) { style.backgroundColor = c; style.changed = true; }
     });
   }

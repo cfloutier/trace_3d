@@ -8,6 +8,7 @@ DataGUI dataGui;
 
 PGraphics current_graphics;
 ControlP5 cp5;
+ColorChooserPopup colorPopup;
 
 ArrayList<Mesh> meshList = new ArrayList<Mesh>();
 int meshListVersion = 0;
@@ -45,12 +46,13 @@ void setup()
 
 void setupControls()
 {
-  cp5 = new ControlP5(this);
-  cp5.getTab("default").setLabel("Hide GUI");
   // Drawn manually at the end of draw() instead (see drawControlP5()): auto-draw fires via
   // a registerMethod("draw", ...) callback whose exact GL state at invocation we don't
   // fully control, which is why hint(DISABLE_DEPTH_TEST) set earlier in our own draw()
-  // wasn't reliably still in effect by the time it actually rendered.
+  // wasn't reliably still in effect by the time it actually rendered. Same reasoning for
+  // the color-chooser popup's own gradient rendering - init_xlib(false) skips its
+  // registerMethod("draw", colorPopup) too, drawn manually in drawControlP5() instead.
+  init_xlib(false);
   cp5.setAutoDraw(false);
   dataGui.Init();
 }
@@ -137,6 +139,7 @@ void drawControlP5()
   hint(DISABLE_DEPTH_TEST);
   hint(DISABLE_DEPTH_MASK);
   cp5.draw();
+  colorPopup.draw();
   hint(ENABLE_DEPTH_TEST);
   hint(ENABLE_DEPTH_MASK);
 }
