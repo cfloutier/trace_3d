@@ -15,6 +15,17 @@ class TubeDistributionData extends MeshDistributionData
   float box_length_min = 80;
   float box_length_max = 180;
 
+  // Orientation around Y (the up/down axis - same axis GridDistributionData.rotation_y
+  // uses). In degrees (converted to radians in createMeshes(), like Grid's fields);
+  // random_rotation_y is a +/- range added on top per box, same convention as Grid.
+  float rotation_y        = 0;
+  float random_rotation_y = 0;
+  // When true, rotation_y is measured from a per-box radial base angle instead of 0 -
+  // each box's default (rotation_y=0) side then faces directly away from the tube's
+  // central Y axis, following the box's own position angle around it, rather than
+  // every box sharing one fixed world-space orientation.
+  boolean radial_orientation = false;
+
   @Override
     void createMeshes(ArrayList<Mesh> out_meshes, int random_seed)
   {
@@ -46,7 +57,15 @@ class TubeDistributionData extends MeshDistributionData
       float center_z = sin(a) * radius;
       float center_y = baseY + size_y * 0.5;
 
-      out_meshes.add(new Box3D(center_x, center_y, center_z, size_x, size_y, size_z));
+      // Rotating local +Z (the unrotated box's world-+Z-facing side) by (HALF_PI - a)
+      // around Y lands it on (cos(a), 0, sin(a)) - exactly the radial direction at this
+      // box's own position (Box3D.rotateYPoint's convention: x'=x*cos+z*sin, z'=-x*sin+
+      // z*cos, so (0,0,1) -> (sin(HALF_PI-a), 0, cos(HALF_PI-a)) = (cos(a), 0, sin(a))).
+      float radialBase = radial_orientation ? (HALF_PI - a) : 0;
+      float box_rotation_y = radialBase + radians(rotation_y) + radians(random(-random_rotation_y, random_rotation_y));
+
+      out_meshes.add(new Box3D(center_x, center_y, center_z, size_x, size_y, size_z,
+        new PVector(0, box_rotation_y, 0)));
     }
   }
 }
@@ -66,6 +85,9 @@ class TubeDistributionGUI
   Slider box_size;
   Slider box_length_min;
   Slider box_length_max;
+  Slider rotation_y;
+  Slider random_rotation_y;
+  Toggle radial_orientation;
 
   TubeDistributionGUI(TubeDistributionData data)
   {
@@ -98,10 +120,18 @@ class TubeDistributionGUI
 
     box_size = panel.addSlider("box_size", "Box Size", data, 10, 400);
     controls.add(box_size);
-    box_length_min = panel.addSlider("box_length_min", "Length Min", data, 2, 20000);
+    box_length_min = panel.addSlider("box_length_min", "Length Min", data, 2, 2000);
     controls.add(box_length_min);
-    box_length_max = panel.addSlider("box_length_max", "Length Max", data, 2, 20000);
+    box_length_max = panel.addSlider("box_length_max", "Length Max", data, 2, 2000);
     controls.add(box_length_max);
+    panel.nextLine();
+
+    rotation_y = panel.addSlider("rotation_y", "Rotation Y", data, -180, 180);
+    controls.add(rotation_y);
+    random_rotation_y = panel.addSlider("random_rotation_y", "Random Rotation", data, 0, 180);
+    controls.add(random_rotation_y);
+    radial_orientation = panel.addToggle("radial_orientation", "Radial", data);
+    controls.add(radial_orientation);
   }
 
   void setGUIValues()

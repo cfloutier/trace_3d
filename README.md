@@ -82,6 +82,9 @@ The Meshes tab drives the Box3D distribution through an active mode:
 | `base_y_min` / `base_y_max` | Range of box base height |
 | `box_size` | X/Z cross-section of the boxes |
 | `box_length_min` / `box_length_max` | Range of box length (Y height) |
+| `rotation_y` | Base orientation of the boxes around Y (degrees) |
+| `random_rotation_y` | Additional random rotation (+/- this value) |
+| `Radial` | When on, `rotation_y` is measured from each box's own radial angle instead of a fixed world direction — every box's default (`rotation_y=0`) side then faces directly away from the tube's central axis, following its own position around it |
 
 3D geometry is cached in meshList and only rebuilt when Meshes changes.
 
@@ -216,6 +219,12 @@ For architecture details, persisted settings, and the build procedure, see [DEVE
 ---
 
 ## Changelog
+
+### 2026-08-31
+- **Debug tab**: new tab with display-only toggles (Show Edges, Show Patterns, Show Face Debug Lines) and a Min Line Length filter to clean up leftover short/sliver marks — none of this affects what's computed, only what's drawn (and exported).
+- **Hachures foreshortening compensation**: a `Foreshortening Comp.` slider counteracts perspective making steeply-angled faces look denser than head-on ones (Hachures only).
+- **Shading Contrast**: a gamma-style `Contrast` slider lets the light response be reshaped to accentuate either shaded or lit faces, on top of the existing Power (intensity) control.
+- **Tube mode orientation**: boxes in Tube distribution can now be rotated around Y (`rotation_y`, `random_rotation_y`, same convention as Grid mode), optionally locked to face radially outward from the tube's central axis (`Radial` toggle).
 
 ### 2026-08-21
 - **Pattern types**: the Pattern tab now supports multiple line styles — today's original pattern is now "Random Lines" (gained an `orientation` slider, 0=vertical/90=horizontal, in addition to its existing parameters), and a new "Hachures" style draws regular, evenly-spaced lines instead (density set via a spacing, not a line count). Existing settings files with tuned Random Lines values keep working as-is (auto-migrated on load); re-save to persist them under the new layout.
