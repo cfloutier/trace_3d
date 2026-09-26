@@ -160,7 +160,7 @@ class CameraData extends GenericData implements CameraProjector3D
   // facing direction flattened onto that plane, instead of the camera's own (tilted)
   // right/up plane - so a drag "walks" the target across the ground regardless of pitch.
   // Same screen-delta -> world-delta scaling and sign convention as panTargetByScreenDelta
-  // (mouse-drag axis mirrored: dx -> flattened right, dy -> flattened forward).
+  // on dx (mirrored: dx -> flattened right); dragging the mouse up moves forward.
   void panTargetOnHorizontalPlane(float dxPixels, float dyPixels, float viewScale)
   {
     CameraFrame frame = buildFrame();
@@ -185,7 +185,7 @@ class CameraData extends GenericData implements CameraProjector3D
       forwardFlat.normalize();
 
     PVector deltaRight = PVector.mult(rightFlat, -dxPixels * worldPerPixel);
-    PVector deltaForward = PVector.mult(forwardFlat, dyPixels * worldPerPixel);
+    PVector deltaForward = PVector.mult(forwardFlat, -dyPixels * worldPerPixel);
     PVector delta = PVector.add(deltaRight, deltaForward);
 
     target_x += delta.x;

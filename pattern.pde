@@ -135,14 +135,17 @@ class FacePatternGUI extends GUIPanel
     float start_y_pos = yPos;
     random_lines_ui.setupControls(this);
     nextLine();
+
     // reset y pos for each pattern type, same as BoxesGUI does for grid/tube
     yPos = start_y_pos;
     hachures_ui.setupControls(this);
+
     nextLine();
 
     apply_sides = addToggle("apply_sides", "Sides", facepattern);
     apply_top = addToggle("apply_top", "Top", facepattern);
     apply_bottom = addToggle("apply_bottom", "Bottom", facepattern);
+    
     nextLine();
 
     addButton("Seed").plugTo(this, "setSeed");

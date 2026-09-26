@@ -61,6 +61,8 @@ class HachuresGUI
     panel.nextLine();
     foreshortening_compensation = panel.addSlider("foreshortening_compensation", "Foreshortening Comp.", data, 0, 1);
     controls.add(foreshortening_compensation);
+    panel.nextLine();
+    
   }
 
   void setGUIValues()

@@ -9,7 +9,7 @@
   "FacePattern": {
     "pattern_type": 0,
     "seed": 1,
-    "apply_bottom": false,
+    "apply_bottom": true,
     "apply_sides": true,
     "Hachures": {
       "orientation": 64.80000305175781,
@@ -18,25 +18,25 @@
     },
     "apply_top": false,
     "Shading": {
-      "light_yaw": -18,
+      "light_yaw": -180,
       "contrast": 1.5440001487731934,
       "power": 5,
-      "enabled": false,
+      "enabled": true,
       "light_pitch": -7.1999969482421875
     },
     "RandomLines": {
-      "line_length_random": 63.33333206176758,
-      "lines_per_face": 48,
-      "vertical_bias": -0.0666666030883789,
-      "orientation": 67.80000305175781,
+      "line_length_random": 370,
+      "lines_per_face": 16,
+      "vertical_bias": 0.9000005722045898,
+      "orientation": 0,
       "line_length_min": 43.33333206176758
     },
-    "enabled": false
+    "enabled": true
   },
   "Style": {
     "backgroundColor": -16777216,
     "lineColor": -1,
-    "lineWidth": 0.9166666865348816
+    "lineWidth": 0.6500000357627869
   },
   "Page": {
     "clip_landscape": true,
@@ -46,18 +46,18 @@
     "clip_aspect_ratio": 1,
     "clip_height": 839.0573120117188,
     "paper_format": 2,
-    "global_scale": 0.931057870388031
+    "global_scale": 0.9394116401672363
   },
   "Camera": {
-    "target_x": 157.7374267578125,
+    "target_x": 277.4635925292969,
     "target_distance": 10000,
-    "target_y": 2489.04150390625,
-    "target_z": -382.3876647949219,
+    "target_y": 2634.8857421875,
+    "target_z": -2392.64892578125,
     "projection_mode": 1,
     "ortho_zoom": 1,
-    "pitch": 1.5697963237762451,
+    "pitch": 1.3697965145111084,
     "fov": 61.56666946411133,
-    "yaw": -0.1031893864274025
+    "yaw": -0.2031894326210022
   },
   "Debug": {
     "min_line_length": 0,
@@ -66,21 +66,21 @@
     "show_edges": true
   },
   "Boxes": {
-    "random_seed": -1885091707,
+    "random_seed": -1890864585,
     "Tube": {
-      "box_size": 36,
+      "box_size": 80.20000457763672,
       "radius_min": 815.1000366210938,
       "rotation_y": 74.40000915527344,
       "radial_orientation": true,
       "box_length_max": 2535.080078125,
-      "random_rotation_y": 40.80000305175781,
+      "random_rotation_y": 0,
       "box_multiplier": 14,
       "start_y": 17866.66796875,
-      "tube_length": 26400.001953125,
-      "radius_max": 1454.2000732421875,
-      "bend_angle": 30,
+      "tube_length": 34400,
+      "radius_max": 989.4000244140625,
+      "bend_angle": 82.80000305175781,
       "bend_direction": -97.19999694824219,
-      "box_count": 177,
+      "box_count": 128,
       "box_length_min": 535.280029296875
     },
     "Grid": {

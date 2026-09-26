@@ -33,8 +33,8 @@ On startup, values are loaded from Settings/default.json.
 ## User Interaction
 
 - Left-click drag: moves the target on the horizontal plane (Y unchanged), in the
-  camera's current view direction flattened onto that plane (mouse Y axis inverted:
-  you move "forward" when dragging the mouse down). Independent of pitch, so it
+  camera's current view direction flattened onto that plane (you move "forward" when
+  dragging the mouse up). Independent of pitch, so it
   still works in a steep top-down view.
 - Shift + left-click drag: classic pan in the camera's screen plane (moves the
   target along the camera's right/up axes).
