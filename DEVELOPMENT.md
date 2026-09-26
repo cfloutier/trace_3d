@@ -21,7 +21,10 @@ Main files:
 - LineBuilder.pde: 2D line generation (normal + occlusion).
 - mesh.pde: Meshes mode data+UI and Grid/Tube routing.
 - mesh_grid.pde: Grid mode generation.
-- mesh_tube.pde: random Tube mode generation.
+- mesh_tube.pde: random Tube mode generation. Optional bend: the straight layout is
+  computed first, then each box is moved rigidly onto a circular arc (radius
+  tube_length/bend_angle, vertical at the start point) and rotated by the arc's local
+  turn via Box3D.applyWorldRotation().
 - DataGlobal.pde: aggregates the data chapters.
 - DataGUI.pde: tab GUI + mouse interactions.
 - DataOcclusion.pde: HLR parameters + Occlusion UI.

@@ -6,6 +6,20 @@ Polyline makeProjectedEdge(PVector a, PVector b, CameraProjector3D camera)
   return edge;
 }
 
+// Row-major 3x3 rotation matrix of 'angle' radians (right-handed) around the unit
+// vector 'axis' (Rodrigues' formula).
+float[] axisAngleMatrix(PVector axis, float angle)
+{
+  float c = cos(angle);
+  float s = sin(angle);
+  float t = 1 - c;
+  float x = axis.x, y = axis.y, z = axis.z;
+  return new float[] {
+    t * x * x + c,     t * x * y - s * z, t * x * z + s * y,
+    t * x * y + s * z, t * y * y + c,     t * y * z - s * x,
+    t * x * z - s * y, t * y * z + s * x, t * z * z + c
+  };
+}
 
 class Box3D extends Mesh
 {
@@ -61,7 +75,16 @@ class Box3D extends Mesh
   float size_y;
   float size_z;
 
+  // Euler angles as given to setRotation() (Rx applied first, then Ry, then Rz). Only
+  // describes the orientation until applyWorldRotation() is called - 'orient' below is
+  // what every transform actually uses.
   PVector rotation = new PVector(0, 0, 0);
+
+  // Orientation as a row-major 3x3 rotation matrix (local -> world, around the base
+  // pivot). Built from 'rotation' by setRotation(), then optionally left-multiplied by
+  // applyWorldRotation() - e.g. Tube mode's bend, a rotation around an arbitrary
+  // horizontal axis that doesn't fit a fixed Euler order without gimbal lock.
+  float[] orient = { 1, 0, 0, 0, 1, 0, 0, 0, 1 };
 
   Box3D(float center_x, float center_y, float center_z, float size_x, float size_y, float size_z)
   {
@@ -85,6 +108,51 @@ class Box3D extends Mesh
       this.rotation = new PVector(0, 0, 0);
     else
       this.rotation = rotation.copy();
+
+    // Columns = the local X/Y/Z axes run through the Euler helpers, so the matrix
+    // reproduces rotateXPoint/rotateYPoint/rotateZPoint's exact convention.
+    PVector[] cols = { new PVector(1, 0, 0), new PVector(0, 1, 0), new PVector(0, 0, 1) };
+    for (int c = 0; c < 3; c++)
+    {
+      PVector v = cols[c];
+      if (this.rotation.x != 0) v = rotateXPoint(v, this.rotation.x);
+      if (this.rotation.y != 0) v = rotateYPoint(v, this.rotation.y);
+      if (this.rotation.z != 0) v = rotateZPoint(v, this.rotation.z);
+      orient[c] = v.x;
+      orient[3 + c] = v.y;
+      orient[6 + c] = v.z;
+    }
+  }
+
+  // Rotates the box's orientation by 'angle' (radians, right-handed) around the unit
+  // world-space 'axis', on top of its current orientation. Pivot stays the base center
+  // (center_x/y/z) - callers position the box themselves.
+  void applyWorldRotation(PVector axis, float angle)
+  {
+    float[] r = axisAngleMatrix(axis, angle);
+    float[] m = new float[9];
+    for (int i = 0; i < 3; i++)
+      for (int j = 0; j < 3; j++)
+        m[i * 3 + j] = r[i * 3] * orient[j] + r[i * 3 + 1] * orient[3 + j] + r[i * 3 + 2] * orient[6 + j];
+    orient = m;
+  }
+
+  // Local-frame vector -> world-frame vector (no translation).
+  PVector localToWorldDir(PVector v)
+  {
+    return new PVector(
+      orient[0] * v.x + orient[1] * v.y + orient[2] * v.z,
+      orient[3] * v.x + orient[4] * v.y + orient[5] * v.z,
+      orient[6] * v.x + orient[7] * v.y + orient[8] * v.z);
+  }
+
+  // World-frame vector -> local-frame vector (transpose = inverse for a rotation).
+  PVector worldToLocalDir(PVector v)
+  {
+    return new PVector(
+      orient[0] * v.x + orient[3] * v.y + orient[6] * v.z,
+      orient[1] * v.x + orient[4] * v.y + orient[7] * v.z,
+      orient[2] * v.x + orient[5] * v.y + orient[8] * v.z);
   }
 
   PVector[] getVertices()
@@ -119,13 +187,7 @@ class Box3D extends Mesh
 
   PVector rotateAroundBaseCenter(PVector point)
   {
-    PVector rotated = point.copy();
-    rotated.sub(center_x, center_y, center_z);
-
-    if (rotation.x != 0) rotated = rotateXPoint(rotated, rotation.x);
-    if (rotation.y != 0) rotated = rotateYPoint(rotated, rotation.y);
-    if (rotation.z != 0) rotated = rotateZPoint(rotated, rotation.z);
-
+    PVector rotated = localToWorldDir(new PVector(point.x - center_x, point.y - center_y, point.z - center_z));
     rotated.add(center_x, center_y, center_z);
     return rotated;
   }
@@ -203,10 +265,7 @@ class Box3D extends Mesh
   // not the volume's geometric center.
   PVector getWorldGeometricCenter()
   {
-    PVector offset = new PVector(0, -size_y * 0.5, 0);
-    if (rotation.x != 0) offset = rotateXPoint(offset, rotation.x);
-    if (rotation.y != 0) offset = rotateYPoint(offset, rotation.y);
-    if (rotation.z != 0) offset = rotateZPoint(offset, rotation.z);
+    PVector offset = localToWorldDir(new PVector(0, -size_y * 0.5, 0));
     return new PVector(center_x + offset.x, center_y + offset.y, center_z + offset.z);
   }
 
@@ -235,19 +294,15 @@ class Box3D extends Mesh
 
   // Transforms a world-space point (isDirection=false) or vector (isDirection=true, no translation)
   // into the box's unrotated local frame, where the box occupies x in [-size_x,size_x],
-  // y in [-size_y,0], z in [-size_z,size_z]. This is the exact inverse of rotateAroundBaseCenter,
-  // which applies Rx then Ry then Rz: the inverse applies Rz(-z) then Ry(-y) then Rx(-x).
+  // y in [-size_y,0], z in [-size_z,size_z]. This is the exact inverse of rotateAroundBaseCenter
+  // (transposed orientation matrix).
   PVector worldToLocal(PVector world, boolean isDirection)
   {
     PVector p = world.copy();
     if (!isDirection)
       p.sub(center_x, center_y, center_z);
 
-    if (rotation.z != 0) p = rotateZPoint(p, -rotation.z);
-    if (rotation.y != 0) p = rotateYPoint(p, -rotation.y);
-    if (rotation.x != 0) p = rotateXPoint(p, -rotation.x);
-
-    return p;
+    return worldToLocalDir(p);
   }
 
   // Closed-form ray/box (OBB) intersection via the slab method, done in the box's local frame

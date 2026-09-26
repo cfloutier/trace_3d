@@ -68,11 +68,11 @@
   "Boxes": {
     "random_seed": -402480349,
     "Tube": {
-      "base_y_min": -1333.333984375,
+      "tube_length": 13200.001953125,
       "box_multiplier": 14,
       "box_size": 36,
       "radius_max": 2176.300048828125,
-      "base_y_max": 11866.66796875,
+      "start_y": 11866.66796875,
       "radius_min": 1006,
       "rotation_y": 74.40000915527344,
       "radial_orientation": true,

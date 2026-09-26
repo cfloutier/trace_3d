@@ -2,96 +2,101 @@
   "Occlusion": {
     "sample_step_px": 1.25,
     "self_occlusion_eps_scale": 1.0000000474974513E-4,
-    "seam_edges_enabled": false,
+    "seam_edges_enabled": true,
     "bisection_iterations": 10,
     "enabled": true
   },
   "FacePattern": {
-    "pattern_type": 1,
-    "seed": 1183021454,
+    "pattern_type": 0,
+    "seed": 1,
     "apply_bottom": false,
     "apply_sides": true,
     "Hachures": {
-      "orientation": 145.1999969482422,
-      "line_spacing": 7.28000020980835,
-      "foreshortening_compensation": 0.8100000023841858
+      "orientation": 64.80000305175781,
+      "line_spacing": 26.639999389648438,
+      "foreshortening_compensation": 1
     },
-    "apply_top": true,
+    "apply_top": false,
     "Shading": {
-      "light_yaw": -22.800003051757812,
+      "light_yaw": -18,
       "contrast": 1.5440001487731934,
       "power": 5,
       "enabled": true,
-      "light_pitch": -8.399993896484375
+      "light_pitch": -7.1999969482421875
     },
     "RandomLines": {
-      "line_length_random": 166.6666717529297,
-      "lines_per_face": 139,
-      "vertical_bias": -0.9666666984558105,
-      "orientation": 79.19999694824219,
-      "line_length_min": 16.666667938232422
+      "line_length_random": 63.33333206176758,
+      "lines_per_face": 23,
+      "vertical_bias": 0,
+      "orientation": 53.400001525878906,
+      "line_length_min": 43.33333206176758
     },
     "enabled": true
   },
   "Style": {
-    "backgroundColor": -1,
-    "lineColor": -6596170,
-    "lineWidth": 1.0833333730697632
+    "backgroundColor": -16777216,
+    "lineColor": -1,
+    "lineWidth": 0.9166666865348816
   },
   "Page": {
     "clip_landscape": true,
     "clipping": true,
-    "clip_width": 966.6666870117188,
+    "clip_width": 1186.666748046875,
     "margin": 2,
     "clip_aspect_ratio": 1,
-    "clip_height": 683.501708984375,
-    "paper_format": 1,
-    "global_scale": 1
+    "clip_height": 793.3333740234375,
+    "paper_format": 2,
+    "global_scale": 0.9200319051742554
   },
   "Camera": {
-    "target_x": 257.1607971191406,
-    "target_distance": 1159.13720703125,
-    "target_y": -765.371826171875,
-    "target_z": -92.50901794433594,
+    "target_x": 377.2822570800781,
+    "target_distance": 10000,
+    "target_y": 2489.04150390625,
+    "target_z": -327.48944091796875,
     "projection_mode": 1,
-    "ortho_zoom": 0.3160000145435333,
-    "pitch": -0.009999990463256836,
-    "fov": 55.333335876464844,
-    "yaw": 3.1415927410125732
+    "ortho_zoom": 1,
+    "pitch": 1.5697963237762451,
+    "fov": 61.56666946411133,
+    "yaw": -0.1031893864274025
   },
   "Debug": {
     "min_line_length": 0,
     "show_face_debug": false,
     "show_patterns": true,
-    "show_edges": false
+    "show_edges": true
   },
   "Boxes": {
-    "random_seed": -1963081282,
+    "random_seed": -402480349,
     "Tube": {
-      "base_y_min": -1240,
-      "box_multiplier": 1,
-      "box_size": 43.79999923706055,
-      "radius_max": 600,
-      "base_y_max": 920,
-      "radius_min": 1412.699951171875,
-      "box_length_max": 1509.13330078125,
-      "box_count": 108,
-      "box_length_min": 2000
+      "tube_length": 13200.001953125,
+      "box_size": 36,
+      "start_y": 11866.66796875,
+      "radius_min": 1006,
+      "rotation_y": 74.40000915527344,
+      "radial_orientation": true,
+      "box_length_max": 2535.080078125,
+      "random_rotation_y": 40.80000305175781,
+      "box_multiplier": 14,
+      "radius_max": 2176.300048828125,
+      "bend_angle": 0,
+      "bend_direction": 0,
+      "box_count": 71,
+      "box_length_min": 535.280029296875
     },
     "Grid": {
-      "random_size": 52.66667175292969,
-      "random_h": 1200,
-      "spacing": 150.40000915527344,
-      "box_height": 10,
+      "random_size": 0,
+      "random_h": 0,
+      "spacing": 90,
+      "box_height": 120,
       "box_size": 32,
-      "perlin_zoom": 0.06460000574588776,
-      "distance_bias": -0.5666666626930237,
-      "rotation_y": -14.399993896484375,
-      "count_z": 17,
-      "random_rotation_y": 63.60000228881836,
-      "height_mode": 3,
-      "count_x": 12
+      "perlin_zoom": 0.15000000596046448,
+      "distance_bias": 1,
+      "rotation_y": 0,
+      "count_z": 4,
+      "random_rotation_y": 0,
+      "height_mode": 0,
+      "count_x": 4
     },
-    "distribution_mode": 0
+    "distribution_mode": 1
   }
 }

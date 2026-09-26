@@ -79,12 +79,15 @@ The Meshes tab drives the Box3D distribution through an active mode:
 | `box_count` | Base number of boxes |
 | `box_multiplier` | Multiplier applied to `box_count` (total count = box_count x box_multiplier) |
 | `radius_min` / `radius_max` | Range of box distance from the central axis |
-| `base_y_min` / `base_y_max` | Range of box base height |
+| `tube_length` | Length of the tube's central line (measured along the curve when bent); boxes are spread uniformly along it |
+| `start_y` | Y position of the central line's start point; the tube goes up (on screen) from there |
 | `box_size` | X/Z cross-section of the boxes |
 | `box_length_min` / `box_length_max` | Range of box length (Y height) |
 | `rotation_y` | Base orientation of the boxes around Y (degrees) |
 | `random_rotation_y` | Additional random rotation (+/- this value) |
 | `Radial` | When on, `rotation_y` is measured from each box's own radial angle instead of a fixed world direction — every box's default (`rotation_y=0`) side then faces directly away from the tube's central axis, following its own position around it |
+| `bend_angle` | Curvature of the tube: total turn (degrees) of its central line over `tube_length` — 0 = straight, 180 = U-turn, 360 = full ring. The line starts vertical at `start_y` and curves progressively; boxes follow the curve (each one is moved and tilted onto the arc) |
+| `bend_direction` | Horizontal direction (degrees, 0 = +X, 90 = +Z) toward which the tube curves |
 
 3D geometry is cached in meshList and only rebuilt when Meshes changes.
 
@@ -219,6 +222,10 @@ For architecture details, persisted settings, and the build procedure, see [DEVE
 ---
 
 ## Changelog
+
+### 2026-09-26
+- **Tube bend**: the Tube distribution can now be curved (`Bend` angle + `Bend Direction`) — the tube's axis becomes a circular arc and every box is moved and tilted to follow it instead of standing on a straight line. `Box3D` now stores its orientation as a rotation matrix so it can take this arbitrary tilt (Euler angles alone can't express it without gimbal lock).
+- **Tube length**: `base_y_min`/`base_y_max` replaced by `tube_length` (length of the central line, along the curve) + `start_y` (start point). Bundled settings files converted with identical layouts; older files lose their Tube range (defaults apply).
 
 ### 2026-08-31
 - **Debug tab**: new tab with display-only toggles (Show Edges, Show Patterns, Show Face Debug Lines) and a Min Line Length filter to clean up leftover short/sliver marks — none of this affects what's computed, only what's drawn (and exported).

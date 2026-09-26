@@ -44,11 +44,11 @@
   "Boxes": {
     "random_seed": 160000,
     "Tube": {
-      "base_y_min": -1240,
+      "tube_length": 2160,
       "box_multiplier": 1,
       "box_size": 43.79999923706055,
       "radius_max": 600,
-      "base_y_max": 920,
+      "start_y": 920,
       "radius_min": 1412.699951171875,
       "box_length_max": 1509.13330078125,
       "box_count": 108,

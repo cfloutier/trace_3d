@@ -109,19 +109,20 @@ class NativePreview3D
     }
   }
 
-  // Rotation order matches Box3D.rotateAroundBaseCenter() (Rx applied first, innermost):
-  // Processing's rotateX/Y/Z calls compose in the OPPOSITE order (last call acts on the
-  // vertex first), so they must be issued Z, then Y, then X to produce the same Rz.Ry.Rx
-  // composition Box3D uses.
+  // Uses Box3D's full orientation matrix (not its Euler 'rotation', which no longer
+  // describes a box bent by applyWorldRotation(), e.g. in a curved Tube).
   void drawBox(Box3D box, PGraphics pg)
   {
     PVector c = box.getWorldGeometricCenter();
+    float[] m = box.orient;
 
     pg.pushMatrix();
     pg.translate(c.x, c.y, c.z);
-    pg.rotateZ(box.rotation.z);
-    pg.rotateY(box.rotation.y);
-    pg.rotateX(box.rotation.x);
+    pg.applyMatrix(
+      m[0], m[1], m[2], 0,
+      m[3], m[4], m[5], 0,
+      m[6], m[7], m[8], 0,
+      0, 0, 0, 1);
     pg.box(box.size_x * 2, box.size_y, box.size_z * 2);
     pg.popMatrix();
   }
