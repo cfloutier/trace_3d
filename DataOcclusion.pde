@@ -7,7 +7,7 @@ class DataOcclusion extends GenericData
     super("Occlusion");
   }
 
-  boolean enabled = false;
+  boolean hlr_enabled = false;
 
   float sample_step_px = 2.0;
   int bisection_iterations = 10;
@@ -21,7 +21,7 @@ class DataOcclusion extends GenericData
   void LoadJson(JSONObject src)
   {
     if (src == null) return;
-    enabled = src.getBoolean("enabled", enabled);
+    hlr_enabled = src.getBoolean("hlr_enabled", hlr_enabled);
     sample_step_px = src.getFloat("sample_step_px", sample_step_px);
     bisection_iterations = src.getInt("bisection_iterations", bisection_iterations);
     self_occlusion_eps_scale = src.getFloat("self_occlusion_eps_scale", self_occlusion_eps_scale);
@@ -33,7 +33,7 @@ class DataOcclusion extends GenericData
   JSONObject SaveJson()
   {
     JSONObject dest = new JSONObject();
-    dest.setBoolean("enabled", enabled);
+    dest.setBoolean("hlr_enabled", hlr_enabled);
     dest.setFloat("sample_step_px", sample_step_px);
     dest.setInt("bisection_iterations", bisection_iterations);
     dest.setFloat("self_occlusion_eps_scale", self_occlusion_eps_scale);
@@ -47,7 +47,7 @@ class OcclusionGUI extends GUIPanel
 {
   DataOcclusion occlusion;
 
-  Toggle enabled;
+  Toggle hlr_enabled;
   Slider sample_step_px;
   Slider bisection_iterations;
   Slider self_occlusion_eps_scale;
@@ -63,7 +63,7 @@ class OcclusionGUI extends GUIPanel
   {
     super.Init();
 
-    enabled = addToggle("enabled", "Enable HLR", occlusion);
+    hlr_enabled = addToggle("hlr_enabled", "Enable HLR", occlusion);
     seam_edges_enabled = addToggle("seam_edges_enabled", "Box Seam Edges", occlusion);
     nextLine();
 
@@ -75,7 +75,7 @@ class OcclusionGUI extends GUIPanel
 
   void setGUIValues()
   {
-    enabled.setValue(occlusion.enabled);
+    hlr_enabled.setValue(occlusion.hlr_enabled);
     sample_step_px.setValue(occlusion.sample_step_px);
     bisection_iterations.setValue(occlusion.bisection_iterations);
     self_occlusion_eps_scale.setValue(occlusion.self_occlusion_eps_scale);

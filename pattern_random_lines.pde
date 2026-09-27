@@ -21,7 +21,7 @@ class RandomLinesData extends PatternTypeData
   // Angle (degrees) of the lines within the face plane: 0 = along the face's true
   // vertical axis (this pattern's only behavior before orientation was added),
   // 90 = along its horizontal axis.
-  float orientation = 0;
+  float lines_orientation = 0;
 
   // cameraPos is unused here (only Hachures' foreshortening compensation needs it) -
   // part of the shared PatternTypeData contract, same as patternSeed being unused by
@@ -31,7 +31,7 @@ class RandomLinesData extends PatternTypeData
   {
     int effectiveLinesPerFace = round(lines_per_face * shadingMultiplier);
     generateRandomLinesWorldEdges(box, boxIndex, faceIndex, patternSeed,
-      effectiveLinesPerFace, line_length_min, line_length_random, vertical_bias, orientation, out);
+      effectiveLinesPerFace, line_length_min, line_length_random, vertical_bias, lines_orientation, out);
   }
 }
 
@@ -44,7 +44,7 @@ class RandomLinesGUI
   Slider line_length_min;
   Slider line_length_random;
   Slider vertical_bias;
-  Slider orientation;
+  Slider lines_orientation;
 
   RandomLinesGUI(RandomLinesData data)
   {
@@ -67,8 +67,8 @@ class RandomLinesGUI
 
     vertical_bias = panel.addSlider("vertical_bias", "Vertical Bias", data, -5, 5);
     controls.add(vertical_bias);
-    orientation = panel.addSlider("orientation", "Orientation", data, 0, 180);
-    controls.add(orientation);
+    lines_orientation = panel.addSlider("lines_orientation", "Orientation", data, 0, 180);
+    controls.add(lines_orientation);
   }
 
   void setGUIValues()

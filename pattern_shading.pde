@@ -7,7 +7,7 @@ class ShadingData extends GenericData
     super("Shading");
   }
 
-  boolean enabled = false;
+  boolean shading_enabled = false;
   // Direction the light comes FROM, as two Euler angles (degrees) - same convention
   // as CameraData's orbit direction (see computeLightDirection(), xlib3d_Shading.pde).
   float light_yaw = 45;
@@ -29,7 +29,7 @@ class ShadingGUI
 {
   ShadingData shading;
 
-  Toggle enabled;
+  Toggle shading_enabled;
   Slider light_yaw;
   Slider light_pitch;
   Slider power;
@@ -43,7 +43,7 @@ class ShadingGUI
   void setupControls(FacePatternGUI panel)
   {
     panel.addLabel("Shading :");
-    enabled = panel.addToggle("enabled", "Enable Shading", shading);
+    shading_enabled = panel.addToggle("shading_enabled", "Enable Shading", shading);
     panel.nextLine();
 
     light_yaw = panel.addSlider("light_yaw", "Light Yaw", shading, -180, 180);
@@ -56,7 +56,7 @@ class ShadingGUI
 
   void setGUIValues()
   {
-    enabled.setValue(shading.enabled);
+    shading_enabled.setValue(shading.shading_enabled);
     light_yaw.setValue(shading.light_yaw);
     light_pitch.setValue(shading.light_pitch);
     power.setValue(shading.power);
@@ -71,7 +71,7 @@ class ShadingGUI
 
   void updateVisibility()
   {
-    if (shading.enabled)
+    if (shading.shading_enabled)
     {
       light_yaw.show();
       light_pitch.show();

@@ -24,7 +24,7 @@ class DataFacePattern extends GenericData
     addChapter(shading);
   }
 
-  boolean enabled = false;
+  boolean pattern_enabled = false;
   int pattern_type = TYPE_RANDOM_LINES;
   boolean apply_sides = true;
   boolean apply_top = false;
@@ -47,7 +47,7 @@ class DataFacePattern extends GenericData
   void LoadJson(JSONObject src)
   {
     if (src == null) return;
-    enabled = src.getBoolean("enabled", enabled);
+    pattern_enabled = src.getBoolean("pattern_enabled", pattern_enabled);
     pattern_type = src.getInt("pattern_type", pattern_type);
     apply_sides = src.getBoolean("apply_sides", apply_sides);
     apply_top = src.getBoolean("apply_top", apply_top);
@@ -74,7 +74,7 @@ class DataFacePattern extends GenericData
   JSONObject SaveJson()
   {
     JSONObject dest = new JSONObject();
-    dest.setBoolean("enabled", enabled);
+    dest.setBoolean("pattern_enabled", pattern_enabled);
     dest.setInt("pattern_type", pattern_type);
     dest.setBoolean("apply_sides", apply_sides);
     dest.setBoolean("apply_top", apply_top);
@@ -95,7 +95,7 @@ class FacePatternGUI extends GUIPanel
   RandomLinesGUI random_lines_ui;
   HachuresGUI hachures_ui;
 
-  Toggle enabled;
+  Toggle pattern_enabled;
   myRadioButton pattern_type;
   Toggle apply_sides;
   Toggle apply_top;
@@ -121,7 +121,7 @@ class FacePatternGUI extends GUIPanel
   {
     super.Init();
 
-    enabled = addToggle("enabled", "Enable Pattern", facepattern);
+    pattern_enabled = addToggle("pattern_enabled", "Enable Pattern", facepattern);
     nextLine();
 
     shading_ui.setupControls(this);
@@ -160,7 +160,7 @@ class FacePatternGUI extends GUIPanel
 
   void setGUIValues()
   {
-    enabled.setValue(facepattern.enabled);
+    pattern_enabled.setValue(facepattern.pattern_enabled);
     if ((int)pattern_type.getValue() != facepattern.pattern_type)
       pattern_type.activate(facepattern.pattern_type);
     random_lines_ui.setGUIValues();

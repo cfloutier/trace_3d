@@ -24,7 +24,10 @@ Main files:
 - mesh_tube.pde: random Tube mode generation. Optional bend: the straight layout is
   computed first, then each box is moved rigidly onto a circular arc (radius
   tube_length/bend_angle, vertical at the start point) and rotated by the arc's local
-  turn via Box3D.applyWorldRotation().
+  turn via Box3D.applyWorldRotation(). Box orientation is composed innermost-first:
+  rotation_y (spin around the box's length), then box_tilt (lean around a horizontal
+  axis picked by tilt_direction relative to the box's radial direction), then the
+  bend; the base pivot is derived last from the box's mid point.
 - DataGlobal.pde: aggregates the data chapters.
 - DataGUI.pde: tab GUI + mouse interactions.
 - DataOcclusion.pde: HLR parameters + Occlusion UI.
@@ -56,7 +59,7 @@ Recompute rule:
 
 ## Occlusion (HLR) — algorithm
 
-When Occlusion.enabled is active, rendering goes through an analytical HLR pass (object-space ray-casting, not rasterization):
+When Occlusion.hlr_enabled is active, rendering goes through an analytical HLR pass (object-space ray-casting, not rasterization):
 1. Collection: for each Box3D, an occluder (world bbox + center + diagonal) and its 12 projected edges (screen coordinates + world coordinates).
 2. A BVH (xlib3d_BVH3D) is built over the occluders; it is only rebuilt when the box list changes (not on a simple camera drag).
 3. Emission: each edge is sampled in screen space (same parametrization as before, correct in perspective via 1/z). At each sample, the point is deprojected to 3D and a ray is cast toward the camera against the BVH to test exact visibility (closed ray-box intersection, handles rotation). On a visibility change between two samples, a bisection refines the exact cutoff point (instead of snapping it to the sampling grid).
@@ -83,7 +86,7 @@ costly on scenes with many overlaps, hence the option being off by default.
 
 ## Face Pattern — algorithm
 
-Pattern tab (only useful when Occlusion.enabled): draws marks on the visible
+Pattern tab (only useful when Occlusion.hlr_enabled): draws marks on the visible
 faces of the Box3D meshes, reusing the HLR pipeline. Multiple pattern *types*
 are supported (Random Lines, Hachures today), composed exactly the way
 Grid/Tube are composed into `DataBoxes`/`BoxesGUI`
@@ -136,7 +139,7 @@ exponent ≤ 1 so both bias directions concentrate equally strongly — mirrored
 for negative bias rather than using an exponent > 1 directly, which left a
 visibly loose "leftover" fraction of lines near the opposite end). A segment
 of length `line_length_min + random(0, line_length_random)` is then grown from
-that center along `orientation` degrees from `spanDir` (0 = vertical, 90 =
+that center along `lines_orientation` degrees from `spanDir` (0 = vertical, 90 =
 horizontal) and clipped to the face.
 
 ### Hachures (`pattern_hachures.pde` + `generateHachuresWorldEdges()`)
@@ -164,7 +167,7 @@ foreshorten = sqrt(max(0, 1 - alignment^2))        // 1 = no compression, 0 = ma
 effective   = lerp(1, foreshorten, compensation)   // compensation in [0,1], 0 = off
 spacing     = spacing / max(0.05, effective)       // widen spacing where compression is worst
 ```
-Depends on `orientation` because that's what determines `perpWorld` - the
+Depends on `hachures_orientation` because that's what determines `perpWorld` - the
 same face tilt can need very different compensation (or none) depending on
 which way the hachures run across it.
 

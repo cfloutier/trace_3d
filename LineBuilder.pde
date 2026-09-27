@@ -100,7 +100,7 @@ class LineBuilder implements BVH3DRayTest
     finalGroup = outGroup;
     startNs = System.nanoTime();
 
-    if (data.occlusion.enabled)
+    if (data.occlusion.hlr_enabled)
     {
       beginOcclusionBuild();
       return;
@@ -541,7 +541,7 @@ class LineBuilder implements BVH3DRayTest
 
   boolean facePatternActive()
   {
-    return data.facepattern.enabled &&
+    return data.facepattern.pattern_enabled &&
       (data.facepattern.apply_sides || data.facepattern.apply_top || data.facepattern.apply_bottom);
   }
 
@@ -650,7 +650,7 @@ class LineBuilder implements BVH3DRayTest
     // meaning is shared across pattern types even though each applies it to its own
     // density parameter (line count, spacing, ...) differently.
     float shadingMultiplier = 1;
-    if (data.facepattern.shading.enabled)
+    if (data.facepattern.shading.shading_enabled)
     {
       PVector faceNormal = box.getFaceNormal(faceIndex);
       PVector lightDir = computeLightDirection(data.facepattern.shading.light_yaw, data.facepattern.shading.light_pitch);

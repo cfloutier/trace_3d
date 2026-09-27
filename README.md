@@ -62,15 +62,15 @@ The Meshes tab drives the Box3D distribution through an active mode:
 |-----------|------|
 | `count_x` / `count_z` | Number of boxes along each grid axis |
 | `spacing` | Distance between adjacent boxes |
-| `box_size` | Base size (X/Z) of each box |
-| `random_size` | Additional random variation on `box_size` (0 to this value) |
+| `grid_box_size` | Base size (X/Z) of each box |
+| `random_size` | Additional random variation on `grid_box_size` (0 to this value) |
 | `box_height` | Base height of the boxes |
 | `height_mode` | Height variation mode: Fixed / White Noise / Perlin Noise / Distance |
 | `random_h` | Additional random height (0 to this value), applied according to `height_mode` |
 | `perlin_zoom` | Perlin noise scale (Perlin Noise mode only) |
 | `distance_bias` | Weight for Distance mode: positive = taller boxes at the center, negative = taller at the edges, 0 = uniform |
-| `rotation_y` | Base rotation of the boxes around the Y axis (degrees) |
-| `random_rotation_y` | Additional random rotation (+/- this value) |
+| `grid_rotation_y` | Base rotation of the boxes around the Y axis (degrees) |
+| `grid_random_rotation_y` | Additional random rotation (+/- this value) |
 
 ### Tube Mode (random)
 
@@ -81,13 +81,15 @@ The Meshes tab drives the Box3D distribution through an active mode:
 | `radius_min` / `radius_max` | Range of box distance from the central axis |
 | `tube_length` | Length of the tube's central line (measured along the curve when bent); boxes are spread uniformly along it |
 | `start_y` | Y position of the central line's start point; the tube goes up (on screen) from there |
-| `box_size` | X/Z cross-section of the boxes |
+| `tube_box_size` | X/Z cross-section of the boxes |
 | `box_length_min` / `box_length_max` | Range of box length (Y height) |
-| `rotation_y` | Base orientation of the boxes around Y (degrees) |
-| `random_rotation_y` | Additional random rotation (+/- this value) |
-| `Radial` | When on, `rotation_y` is measured from each box's own radial angle instead of a fixed world direction — every box's default (`rotation_y=0`) side then faces directly away from the tube's central axis, following its own position around it |
+| `tube_rotation_y` | Base orientation of the boxes around Y (degrees) |
+| `tube_random_rotation_y` | Additional random rotation (+/- this value) |
+| `Radial` | When on, `tube_rotation_y` is measured from each box's own radial angle instead of a fixed world direction — every box's default (`tube_rotation_y=0`) side then faces directly away from the tube's central axis, following its own position around it |
 | `bend_angle` | Curvature of the tube: total turn (degrees) of its central line over `tube_length` — 0 = straight, 180 = U-turn, 360 = full ring. The line starts vertical at `start_y` and curves progressively; boxes follow the curve (each one is moved and tilted onto the arc) |
 | `bend_direction` | Horizontal direction (degrees, 0 = +X, 90 = +Z) toward which the tube curves |
+| `box_tilt` | Tilt of each box relative to the tube's axis (degrees): 0 = along the axis, 90 = perpendicular. Boxes pivot around their own center; `tube_rotation_y` then spins each box around its own length |
+| `tilt_direction` | Which way the boxes lean, measured around the tube from each box's radial direction: 0 = outward (spokes at 90° tilt), 90 = along the circumference (rings at 90° tilt, a helical twist in between) |
 
 3D geometry is cached in meshList and only rebuilt when Meshes changes.
 
@@ -108,14 +110,14 @@ See also [User Interaction](#user-interaction) for mouse controls and the quick-
 
 ## Occlusion (HLR)
 
-When Occlusion.enabled is active, rendering goes through an analytical HLR (Hidden
+When Occlusion.hlr_enabled is active, rendering goes through an analytical HLR (Hidden
 Line Removal) pass: each box edge is ray-cast against the other boxes in the scene
 to determine exactly which portions are visible, rather than a simple approximate
 depth test.
 
 | Parameter | Role |
 |-----------|------|
-| `enabled` | Enables/disables the HLR computation |
+| `hlr_enabled` | Enables/disables the HLR computation |
 | `sample_step_px` | Edge sampling step in screen space |
 | `bisection_iterations` | Number of bisection iterations used to refine a visibility cutoff point |
 | `self_occlusion_eps_scale` | Factor (x box diagonal) for the anti self-occlusion epsilon |
@@ -125,12 +127,12 @@ For the algorithm details (ray-casting, BVH, bisection, seam edges), see [DEVELO
 
 ## Face Pattern
 
-Pattern tab (only useful when Occlusion.enabled): draws marks on the visible
+Pattern tab (only useful when Occlusion.hlr_enabled): draws marks on the visible
 faces of the Box3D meshes, in one of two selectable styles.
 
 | Parameter | Role |
 |-----------|------|
-| `enabled` | Enables/disables the pattern |
+| `pattern_enabled` | Enables/disables the pattern |
 | Type radio | Chooses the pattern style: Random Lines or Hachures |
 | `apply_sides` / `apply_top` / `apply_bottom` | Which face groups are affected (sides on by default; top/bottom off by default) |
 | `seed` | Dedicated seed for the pattern, independent of `random_seed` (Meshes) — lets you reroll the lines without changing the box layout (the "Seed" button draws a new one); only used by Random Lines, ignored by Hachures |
@@ -144,8 +146,8 @@ Variable-length lines at random positions on the face.
 | `lines_per_face` | Number of lines generated per visible face (can go high, e.g. 200-300, depending on desired density) |
 | `line_length_min` | Minimum line length |
 | `line_length_random` | Additional random length (0 to this value), added to `line_length_min` |
-| `vertical_bias` | Biases the position of the lines' center point along the face's true vertical axis (negative = toward the bottom, 0 = even distribution, positive = toward the top) — independent of `orientation` |
-| `orientation` | Angle of the lines within the face plane (0–180°): 0 = vertical, 90 = horizontal |
+| `vertical_bias` | Biases the position of the lines' center point along the face's true vertical axis (negative = toward the bottom, 0 = even distribution, positive = toward the top) — independent of `lines_orientation` |
+| `lines_orientation` | Angle of the lines within the face plane (0–180°): 0 = vertical, 90 = horizontal |
 
 ### Hachures
 
@@ -154,7 +156,7 @@ Regular, evenly-spaced lines spanning the full face — no randomness.
 | Parameter | Role |
 |-----------|------|
 | `line_spacing` | World-space distance between successive lines (smaller = denser) |
-| `orientation` | Angle of the lines within the face plane (0–180°): 0 = vertical, 90 = horizontal |
+| `hachures_orientation` | Angle of the lines within the face plane (0–180°): 0 = vertical, 90 = horizontal |
 | `Foreshortening Comp.` | Counteracts perspective making steeply-angled faces look denser than head-on ones (0 = off, 1 = full correction) — Hachures only, since its regular spacing makes the effect obvious in a way Random Lines' irregular placement doesn't |
 
 ### Shading (optional)
@@ -226,6 +228,8 @@ For architecture details, persisted settings, and the build procedure, see [DEVE
 ### 2026-09-26
 - **Tube bend**: the Tube distribution can now be curved (`Bend` angle + `Bend Direction`) — the tube's axis becomes a circular arc and every box is moved and tilted to follow it instead of standing on a straight line. `Box3D` now stores its orientation as a rotation matrix so it can take this arbitrary tilt (Euler angles alone can't express it without gimbal lock).
 - **Tube length**: `base_y_min`/`base_y_max` replaced by `tube_length` (length of the central line, along the curve) + `start_y` (start point). Bundled settings files converted with identical layouts; older files lose their Tube range (defaults apply).
+- **Tube box tilt**: `Box Tilt` + `Tilt Direction` lean the boxes relative to the tube's axis (perpendicular, diagonal, radial spokes, rings, helical twist).
+- **Unique control names**: parameters that shared a name across tabs/modes were renamed (`lines_orientation`/`hachures_orientation`, `grid_`/`tube_` `box_size`/`rotation_y`/`random_rotation_y`, `hlr_enabled`, `pattern_enabled`, `shading_enabled`) — duplicate names broke the Random Lines orientation slider. Bundled settings files converted.
 
 ### 2026-08-31
 - **Debug tab**: new tab with display-only toggles (Show Edges, Show Patterns, Show Face Debug Lines) and a Min Line Length filter to clean up leftover short/sliver marks — none of this affects what's computed, only what's drawn (and exported).

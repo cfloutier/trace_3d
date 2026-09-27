@@ -5,7 +5,7 @@
     "self_occlusion_eps_scale": 1.0000000474974513E-4,
     "seam_edges_enabled": false,
     "bisection_iterations": 10,
-    "enabled": true
+    "hlr_enabled": true
   },
   "Style": {
     "backgroundColor": -16777216,
@@ -34,7 +34,7 @@
   "Boxes": {
     "random_seed": 200000,
     "Tube": {
-      "box_size": 34.69999694824219,
+      "tube_box_size": 34.69999694824219,
       "box_count": 137,
       "box_multiplier": 41,
       "tube_length": 3093.33349609375,

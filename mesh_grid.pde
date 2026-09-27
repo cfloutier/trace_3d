@@ -13,7 +13,7 @@ class GridDistributionData extends MeshDistributionData
   int   count_x     = 4;
   int   count_z     = 4;
   float spacing     = 90;
-  float box_size    = 32;
+  float grid_box_size    = 32;
   float random_size = 0;
   float box_height  = 120;
   int   height_mode = HEIGHT_FIXED;
@@ -24,9 +24,9 @@ class GridDistributionData extends MeshDistributionData
   float distance_bias = 1;
 
   // Both in degrees (converted to radians in createMeshes() - Box3D's rotation itself is in
-  // radians). random_rotation_y is a +/- range added on top of rotation_y per box.
-  float rotation_y        = 0;
-  float random_rotation_y = 0;
+  // radians). grid_random_rotation_y is a +/- range added on top of grid_rotation_y per box.
+  float grid_rotation_y        = 0;
+  float grid_random_rotation_y = 0;
 
   PerlinNoise perlin = new PerlinNoise();
 
@@ -54,8 +54,8 @@ class GridDistributionData extends MeshDistributionData
         float center_x = col * spacing - half_width;
         float center_z = row * spacing - half_depth;
         float size_y = computeHeight(col, row, center_x, center_z, max_dist);
-        float size_xz = box_size + random(0, random_size);
-        float box_rotation_y = radians(rotation_y + random(-random_rotation_y, random_rotation_y));
+        float size_xz = grid_box_size + random(0, random_size);
+        float box_rotation_y = radians(grid_rotation_y + random(-grid_random_rotation_y, grid_random_rotation_y));
 
         out_meshes.add(new Box3D(center_x, base_center_y, center_z, size_xz, size_y, size_xz,
           new PVector(0, box_rotation_y, 0)));
@@ -96,15 +96,15 @@ class GridDistributionGUI
   Slider count_x;
   Slider count_z;
   Slider spacing;
-  Slider box_size;
+  Slider grid_box_size;
   Slider random_size;
   Slider box_height;
   myRadioButton height_mode;
   Slider random_h;
   Slider perlin_zoom;
   Slider distance_bias;
-  Slider rotation_y;
-  Slider random_rotation_y;
+  Slider grid_rotation_y;
+  Slider grid_random_rotation_y;
 
   GridDistributionGUI(GridDistributionData data)
   {
@@ -123,8 +123,8 @@ class GridDistributionGUI
 
     spacing = panel.addSlider("spacing", "Spacing", data, 10, 400);
     controls.add(spacing);
-    box_size = panel.addSlider("box_size", "Box Size", data, 2, 200);
-    controls.add(box_size);
+    grid_box_size = panel.addSlider("grid_box_size", "Box Size", data, 2, 200);
+    controls.add(grid_box_size);
     random_size = panel.addSlider("random_size", "Random Size", data, 0, 200);
     controls.add(random_size);
     panel.nextLine();
@@ -148,10 +148,10 @@ class GridDistributionGUI
     controls.add(distance_bias);
     panel.nextLine();
 
-    rotation_y = panel.addSlider("rotation_y", "Rotation Y", data, -180, 180);
-    controls.add(rotation_y);
-    random_rotation_y = panel.addSlider("random_rotation_y", "Random Rotation", data, 0, 180);
-    controls.add(random_rotation_y);
+    grid_rotation_y = panel.addSlider("grid_rotation_y", "Rotation Y", data, -180, 180);
+    controls.add(grid_rotation_y);
+    grid_random_rotation_y = panel.addSlider("grid_random_rotation_y", "Random Rotation", data, 0, 180);
+    controls.add(grid_random_rotation_y);
   }
 
   void setGUIValues()

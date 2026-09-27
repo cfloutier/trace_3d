@@ -4,7 +4,7 @@
     "self_occlusion_eps_scale": 1.0000000474974513E-4,
     "seam_edges_enabled": true,
     "bisection_iterations": 10,
-    "enabled": true
+    "hlr_enabled": true
   },
   "FacePattern": {
     "pattern_type": 0,
@@ -12,7 +12,7 @@
     "apply_bottom": true,
     "apply_sides": true,
     "Hachures": {
-      "orientation": 64.80000305175781,
+      "hachures_orientation": 64.80000305175781,
       "line_spacing": 26.639999389648438,
       "foreshortening_compensation": 1
     },
@@ -21,17 +21,17 @@
       "light_yaw": -180,
       "contrast": 1.5440001487731934,
       "power": 5,
-      "enabled": true,
+      "shading_enabled": true,
       "light_pitch": -7.1999969482421875
     },
     "RandomLines": {
       "line_length_random": 370,
       "lines_per_face": 16,
       "vertical_bias": 0.9000005722045898,
-      "orientation": 0,
+      "lines_orientation": 0,
       "line_length_min": 43.33333206176758
     },
-    "enabled": true
+    "pattern_enabled": true
   },
   "Style": {
     "backgroundColor": -16777216,
@@ -68,12 +68,12 @@
   "Boxes": {
     "random_seed": -1890864585,
     "Tube": {
-      "box_size": 80.20000457763672,
+      "tube_box_size": 80.20000457763672,
       "radius_min": 815.1000366210938,
-      "rotation_y": 74.40000915527344,
+      "tube_rotation_y": 74.40000915527344,
       "radial_orientation": true,
       "box_length_max": 2535.080078125,
-      "random_rotation_y": 0,
+      "tube_random_rotation_y": 0,
       "box_multiplier": 14,
       "start_y": 17866.66796875,
       "tube_length": 34400,
@@ -88,12 +88,12 @@
       "random_h": 0,
       "spacing": 90,
       "box_height": 120,
-      "box_size": 32,
+      "grid_box_size": 32,
       "perlin_zoom": 0.15000000596046448,
       "distance_bias": 1,
-      "rotation_y": 0,
+      "grid_rotation_y": 0,
       "count_z": 4,
-      "random_rotation_y": 0,
+      "grid_random_rotation_y": 0,
       "height_mode": 0,
       "count_x": 4
     },

@@ -12,9 +12,9 @@ class HachuresData extends PatternTypeData
   // World-space distance between successive lines, measured perpendicular to them.
   float line_spacing = 20;
   // Angle (degrees) of the lines within the face plane - same convention as
-  // RandomLinesData.orientation: 0 = along the face's true vertical axis, 90 = along
+  // RandomLinesData.lines_orientation: 0 = along the face's true vertical axis, 90 = along
   // its horizontal axis.
-  float orientation = 0;
+  float hachures_orientation = 0;
   // How much to counteract perspective foreshortening making steeply-angled faces
   // look denser (see generateHachuresWorldEdges()): 0 = off (today's behavior), 1 =
   // full geometric compensation. Off by default - opt-in per project convention.
@@ -31,7 +31,7 @@ class HachuresData extends PatternTypeData
       return;
 
     float effectiveSpacing = line_spacing / shadingMultiplier;
-    generateHachuresWorldEdges(box, boxIndex, faceIndex, effectiveSpacing, orientation,
+    generateHachuresWorldEdges(box, boxIndex, faceIndex, effectiveSpacing, hachures_orientation,
       foreshortening_compensation, cameraPos, out);
   }
 }
@@ -42,7 +42,7 @@ class HachuresGUI
   ControlsGroup controls;
 
   Slider line_spacing;
-  Slider orientation;
+  Slider hachures_orientation;
   Slider foreshortening_compensation;
 
   HachuresGUI(HachuresData data)
@@ -56,8 +56,8 @@ class HachuresGUI
 
     line_spacing = panel.addSlider("line_spacing", "Spacing", data, 2, 30);
     controls.add(line_spacing);
-    orientation = panel.addSlider("orientation", "Orientation", data, 0, 180);
-    controls.add(orientation);
+    hachures_orientation = panel.addSlider("hachures_orientation", "Orientation", data, 0, 180);
+    controls.add(hachures_orientation);
     panel.nextLine();
     foreshortening_compensation = panel.addSlider("foreshortening_compensation", "Foreshortening Comp.", data, 0, 1);
     controls.add(foreshortening_compensation);
